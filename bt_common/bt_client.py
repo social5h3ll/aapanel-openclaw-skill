@@ -225,9 +225,265 @@ class BtClient:
         return all_sites
 
     def get_database_list(self) -> list:
-        """获取数据库列表"""
+        """Get database list"""
         result = self.request(API_ENDPOINTS["DATABASE_LIST"])
         return result if isinstance(result, list) else result.get("data", [])
+
+    def get_ssl_info(self, site_name: str) -> dict:
+        """
+        Get SSL certificate info for a site.
+
+        Args:
+            site_name: Site name
+
+        Returns:
+            SSL certificate info
+        """
+        params = {"siteName": site_name}
+        return self.request(API_ENDPOINTS["SSL_LIST"], params)
+
+    def provision_letsencrypt(self, site_name: str, dns_type: str = "dns") -> dict:
+        """
+        Provision Let's Encrypt certificate.
+
+        Args:
+            site_name: Site name
+            dns_type: DNS verification type (dns/dns_ali/dns_cloudflare etc)
+
+        Returns:
+            Result of provision operation
+        """
+        params = {
+            "siteName": site_name,
+            "type": dns_type,
+            "dnspars": ""
+        }
+        return self.request(API_ENDPOINTS["SSL_CREATE"], params)
+
+    def renew_ssl(self, site_name: str) -> dict:
+        """
+        Renew SSL certificate for a site.
+
+        Args:
+            site_name: Site name
+
+        Returns:
+            Result of renewal operation
+        """
+        params = {"siteName": site_name}
+        return self.request(API_ENDPOINTS["SSL_RENEW"], params)
+
+    def revoke_ssl(self, site_name: str) -> dict:
+        """
+        Revoke/disable SSL certificate.
+
+        Args:
+            site_name: Site name
+
+        Returns:
+            Result of revoke operation
+        """
+        params = {"siteName": site_name}
+        return self.request(API_ENDPOINTS["SSL_REVOKE"], params)
+
+    def create_site(self, name: str, path: str, php_version: str = "74") -> dict:
+        """
+        Create a new site.
+
+        Args:
+            name: Site name (domain)
+            path: Document root path
+            php_version: PHP version (default: "74")
+
+        Returns:
+            Result of creation operation
+        """
+        import json
+        webname = json.dumps({
+            "siteinfo": {
+                "name": name,
+                "domain": name,
+                "path": path,
+                "type": 0,
+                "php_version": php_version
+            }
+        })
+        params = {"webname": webname}
+        return self.request(API_ENDPOINTS["SITE_CREATE"], params)
+
+    def delete_site(self, site_id: int) -> dict:
+        """
+        Delete a site.
+
+        Args:
+            site_id: Site ID
+
+        Returns:
+            Result of deletion operation
+        """
+        params = {"id": site_id}
+        return self.request(API_ENDPOINTS["SITE_DELETE"], params)
+
+    def add_domain(self, site_name: str, domain: str, port: int = 80) -> dict:
+        """
+        Add domain to a site.
+
+        Args:
+            site_name: Site name
+            domain: Domain to add
+            port: Port (default: 80)
+
+        Returns:
+            Result of add operation
+        """
+        params = {
+            "siteName": site_name,
+            "domain": domain,
+            "id": 1,
+            "port": port
+        }
+        return self.request(API_ENDPOINTS["SITE_DOMAIN_ADD"], params)
+
+    def remove_domain(self, site_name: str, domain: str, port: int = 80) -> dict:
+        """
+        Remove domain from a site.
+
+        Args:
+            site_name: Site name
+            domain: Domain to remove
+            port: Port (default: 80)
+
+        Returns:
+            Result of remove operation
+        """
+        params = {
+            "siteName": site_name,
+            "domain": domain,
+            "port": port
+        }
+        return self.request(API_ENDPOINTS["SITE_DOMAIN_DELETE"], params)
+
+    def set_php_version(self, site_name: str, version: str) -> dict:
+        """
+        Set PHP version for a site.
+
+        Args:
+            site_name: Site name
+            version: PHP version (e.g., "74", "83")
+
+        Returns:
+            Result of operation
+        """
+        params = {"siteName": site_name, "version": version}
+        return self.request(API_ENDPOINTS["SITE_PHP_VERSION"], params)
+
+    def get_ftp_list(self) -> list:
+        """
+        Get FTP account list.
+
+        Returns:
+            List of FTP accounts
+        """
+        result = self.request(API_ENDPOINTS["FTP_LIST"])
+        return result if isinstance(result, list) else result.get("data", [])
+
+    def create_ftp_user(self, username: str, password: str, path: str,
+                       active: bool = True) -> dict:
+        """
+        Create FTP account.
+
+        Args:
+            username: FTP username
+            password: FTP password
+            path: Home directory
+            active: Whether account is active
+
+        Returns:
+            Result of creation operation
+        """
+        params = {
+            "ftp_username": username,
+            "ftp_password": password,
+            "path": path,
+            "active": "true" if active else "false"
+        }
+        return self.request(API_ENDPOINTS["FTP_CREATE"], params)
+
+    def delete_ftp_user(self, user_id: int) -> dict:
+        """
+        Delete FTP account.
+
+        Args:
+            user_id: FTP account ID
+
+        Returns:
+            Result of deletion operation
+        """
+        params = {"id": user_id}
+        return self.request(API_ENDPOINTS["FTP_DELETE"], params)
+
+    def set_ftp_password(self, user_id: int, password: str) -> dict:
+        """
+        Set FTP account password.
+
+        Args:
+            user_id: FTP account ID
+            password: New password
+
+        Returns:
+            Result of operation
+        """
+        params = {"id": user_id, "password": password}
+        return self.request(API_ENDPOINTS["FTP_SET_PASSWORD"], params)
+
+    def get_firewall_list(self) -> list:
+        """
+        Get firewall rules list.
+
+        Returns:
+            List of firewall rules
+        """
+        result = self.request(API_ENDPOINTS["FIREWALL_LIST"])
+        return result if isinstance(result, list) else result.get("data", [])
+
+    def add_ip_whitelist(self, ip_address: str) -> dict:
+        """
+        Add IP to whitelist.
+
+        Args:
+            ip_address: IP address
+
+        Returns:
+            Result of operation
+        """
+        params = {"address": ip_address}
+        return self.request(API_ENDPOINTS["FIREWALL_ACCEPT"], params)
+
+    def add_ip_blacklist(self, ip_address: str) -> dict:
+        """
+        Add IP to blacklist.
+
+        Args:
+            ip_address: IP address
+
+        Returns:
+            Result of operation
+        """
+        params = {"address": ip_address}
+        return self.request(API_ENDPOINTS["FIREWALL_DROP"], params)
+
+    def remove_ip_firewall(self, ip_address: str) -> dict:
+        """
+        Remove IP from firewall.
+
+        Args:
+            ip_address: IP address
+
+        Returns:
+            Result of operation
+        """
+        params = {"address": ip_address}
+        return self.request(API_ENDPOINTS["FIREWALL_DEL"], params)
 
     def get_firewall_status(self) -> dict:
         """获取防火墙status"""

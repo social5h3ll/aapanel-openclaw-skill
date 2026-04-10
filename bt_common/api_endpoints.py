@@ -49,6 +49,31 @@ API_ENDPOINTS = {
     # 数据库
     "DATABASE_LIST": "/database?action=GetDatabases",
 
+    # SSL证书
+    "SSL_LIST": "/sites?action=GetSsl",
+    "SSL_CREATE": "/acme?action=ApplyCert",
+    "SSL_RENEW": "/site?action=RenewCert",
+    "SSL_REVOKE": "/site?action=CloseSsl",
+
+    # 网站管理
+    "SITE_CREATE": "/site?action=AddSite",
+    "SITE_DELETE": "/site?action=DeleteSite",
+    "SITE_DOMAIN_ADD": "/site?action=AddDomain",
+    "SITE_DOMAIN_DELETE": "/site?action=DeleteDomain",
+    "SITE_PHP_VERSION": "/site?action=SetPHPVersion",
+
+    # FTP
+    "FTP_LIST": "/ftp?action=GetUserList",
+    "FTP_CREATE": "/ftp?action=CreateUser",
+    "FTP_DELETE": "/ftp?action=DeleteUser",
+    "FTP_SET_PASSWORD": "/ftp?action=SetPassword",
+
+    # 防火墙
+    "FIREWALL_LIST": "/firewall?action=GetList",
+    "FIREWALL_ACCEPT": "/firewall?action=AddAcceptAddress",
+    "FIREWALL_DROP": "/firewall?action=AddDropAddress",
+    "FIREWALL_DEL": "/firewall?action=DelAddress",
+
     # 任务管理
     "TASK_LIST": "/task?action=GetTaskList",
     "CRONTAB_LIST": "/crontab?action=GetCrontab",  # 计划任务列表
@@ -63,6 +88,9 @@ API_GROUPS = {
     "service": ["SERVICE_LIST", "SERVICE_STATUS", "SOFTWARE_INFO", "SOFTWARE_LIST"],
     "site": ["SITE_LIST", "PROJECT_JAVA_LIST", "PROJECT_NODE_LIST", "PROJECT_GO_LIST", "PROJECT_PYTHON_LIST", "PROJECT_NET_LIST", "PROJECT_PROXY_LIST", "PROJECT_HTML_LIST", "PROJECT_OTHER_LIST"],
     "database": ["DATABASE_LIST"],
+    "ssl": ["SSL_LIST", "SSL_CREATE", "SSL_RENEW", "SSL_REVOKE"],
+    "ftp": ["FTP_LIST", "FTP_CREATE", "FTP_DELETE"],
+    "firewall": ["FIREWALL_LIST", "FIREWALL_ACCEPT", "FIREWALL_DROP"],
     "task": ["TASK_LIST", "CRONTAB_LIST", "CRONTAB_LOGS"],
 }
 
@@ -90,8 +118,26 @@ API_DESCRIPTIONS = {
     "PROJECT_PROXY_LIST": "获取反代项目列表",
     "PROJECT_HTML_LIST": "获取HTML静态项目列表",
     "PROJECT_OTHER_LIST": "获取其他项目列表",
-    "DATABASE_LIST": "获取数据库列表",
-    "TASK_LIST": "获取任务列表",
+    "DATABASE_LIST": "Get database list",
+    "SSL_LIST": "Get SSL certificate info",
+    "SSL_CREATE": "Create Let's Encrypt certificate",
+    "SSL_RENEW": "Renew SSL certificate",
+    "SSL_REVOKE": "Revoke/disable SSL certificate",
+    "SITE_CREATE": "Create new site",
+    "SITE_DELETE": "Delete site",
+    "SITE_DOMAIN_ADD": "Add domain to site",
+    "SITE_DOMAIN_DELETE": "Remove domain from site",
+    "SITE_PHP_VERSION": "Set PHP version for site",
+    "FTP_LIST": "Get FTP account list",
+    "FTP_CREATE": "Create FTP account",
+    "FTP_DELETE": "Delete FTP account",
+    "FTP_SET_PASSWORD": "Set FTP password",
+    "FIREWALL_LIST": "Get firewall rules list",
+    "FIREWALL_ACCEPT": "Add IP to whitelist",
+    "FIREWALL_DROP": "Add IP to blacklist",
+    "FIREWALL_DEL": "Remove IP from firewall",
+    "TASK_LIST": "Get task list",
+    "CRONTAB_LIST": "Get scheduled task list",
     "CRONTAB_LIST": "获取计划任务列表",
     "CRONTAB_LOGS": "获取计划任务日志",
 }

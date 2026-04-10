@@ -33,6 +33,29 @@ Built for homelab enthusiasts, sysadmins, and developers who run aaPanel as thei
 - Delete to aaPanel recycle bin
 - chmod/chown with recursive directory support
 
+### 🔒 SSL Certificate Management
+- List all SSL certificates with expiry tracking
+- Provision Let's Encrypt certificates
+- Renew certificates
+- Revoke/disable SSL
+
+### 🌐 Site Management
+- Create and delete PHP sites
+- Add and remove domains from sites
+- PHP version switching per site
+
+### 🗄️ Database Management
+- List, create, and delete databases
+- User management with privilege granting
+
+### 🔥 Firewall Management
+- List firewall rules
+- IP whitelist and blacklist management
+
+### 👤 FTP Account Management
+- List, create, and delete FTP accounts
+- Password management
+
 ### ⚙️ Multi-Server Management
 - Add, list, and remove multiple aaPanel servers via config tool
 - Per-server health checks with configurable alert thresholds
@@ -143,6 +166,62 @@ python3 scripts/files.py edit /www/config.php "new content"
 | `python3 scripts/bt-config.py add -n s1 -H https://... -t TOKEN` | Add a server |
 | `python3 scripts/bt-config.py remove my-server` | Remove a server |
 | `python3 scripts/bt-config.py threshold --cpu 75 --memory 80` | Set alert thresholds |
+
+### SSL Certificates
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/ssl.py list --server s1` | List SSL certificates |
+| `python3 scripts/ssl.py info --server s1 --site example.com` | Get SSL info for site |
+| `python3 scripts/ssl.py provision --server s1 --site example.com` | Provision Let's Encrypt |
+| `python3 scripts/ssl.py renew --server s1 --site example.com` | Renew certificate |
+| `python3 scripts/ssl.py revoke --server s1 --site example.com` | Revoke certificate |
+
+### Site Management
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/sites_mgmt.py list --server s1` | List all sites |
+| `python3 scripts/sites_mgmt.py create -n example.com -p /www/...` | Create site |
+| `python3 scripts/sites_mgmt.py delete --name example.com` | Delete site |
+| `python3 scripts/sites_mgmt.py add-domain --site example.com --domain www.example.com` | Add domain |
+| `python3 scripts/sites_mgmt.py remove-domain --site example.com --domain www.example.com` | Remove domain |
+
+### Database Management
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/databases.py list --server s1` | List databases |
+| `python3 scripts/databases.py create --name mydb --user user --password pass` | Create database |
+| `python3 scripts/databases.py delete --name mydb` | Delete database |
+| `python3 scripts/databases.py create-user --user u --password p` | Create DB user |
+| `python3 scripts/databases.py grant --user u --db mydb` | Grant privileges |
+
+### Firewall
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/firewall.py list --server s1` | List firewall rules |
+| `python3 scripts/firewall.py allow --ip 192.168.1.1` | Whitelist IP |
+| `python3 scripts/firewall.py deny --ip 10.0.0.1` | Blacklist IP |
+| `python3 scripts/firewall.py remove --ip 10.0.0.1 --type deny` | Remove IP |
+
+### FTP Accounts
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/ftp.py list --server s1` | List FTP accounts |
+| `python3 scripts/ftp.py create --user u --password p --path /www` | Create FTP account |
+| `python3 scripts/ftp.py delete --id 1` | Delete FTP account |
+| `python3 scripts/ftp.py set-password --id 1 --password newpass` | Set password |
+
+### PHP Version
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/php.py list --server s1` | List PHP versions |
+| `python3 scripts/php.py set --site example.com --version 83` | Set PHP version |
+| `python3 scripts/php.py get --site example.com` | Get current PHP version |
 
 ---
 

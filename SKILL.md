@@ -29,6 +29,10 @@ metadata:
       - file operations
       - directory browsing
       - file editing
+      - database management
+      - firewall
+      - FTP accounts
+      - PHP version
 ---
 
 # aaPanel / BT-Panel — Monitoring & File Management
@@ -132,6 +136,63 @@ python3 scripts/bt-config.py add -n s1 -H https://... -t TOKEN  # Add server
 python3 scripts/bt-config.py remove my-server     # Remove server
 python3 scripts/bt-config.py threshold --cpu 80    # Set alert thresholds
 ```
+
+### SSL Certificate Management
+
+```bash
+python3 scripts/ssl.py list --server my-server           # List SSL certificates
+python3 scripts/ssl.py info --server my-server --site example.com  # Get site SSL info
+python3 scripts/ssl.py provision --server my-server --site example.com  # Let's Encrypt
+python3 scripts/ssl.py renew --server my-server --site example.com    # Renew certificate
+python3 scripts/ssl.py revoke --server my-server --site example.com   # Revoke/disable SSL
+```
+
+### Site Management
+
+```bash
+python3 scripts/sites_mgmt.py list --server my-server            # List all sites
+python3 scripts/sites_mgmt.py create --server my-server --name example.com --path /www/wwwroot/example.com --php 83  # Create site
+python3 scripts/sites_mgmt.py delete --server my-server --name example.com  # Delete site
+python3 scripts/sites_mgmt.py add-domain --server my-server --site example.com --domain www.example.com  # Add domain
+python3 scripts/sites_mgmt.py remove-domain --server my-server --site example.com --domain www.example.com  # Remove domain
+python3 scripts/sites_mgmt.py domains --server my-server --site example.com  # List site domains
+```
+
+### Database Management
+
+```bash
+python3 scripts/databases.py list --server my-server                # List databases
+python3 scripts/databases.py create --server my-server --name mydb --user dbuser --password Secret123  # Create database
+python3 scripts/databases.py delete --server my-server --name mydb  # Delete database
+python3 scripts/databases.py create-user --server my-server --user newuser --password Secret123  # Create user
+python3 scripts/databases.py grant --server my-server --user dbuser --db mydb  # Grant privileges
+```
+
+### Firewall Management
+
+```bash
+python3 scripts/firewall.py list --server my-server          # List firewall rules
+python3 scripts/firewall.py status --server my-server        # Get firewall status
+python3 scripts/firewall.py allow --server my-server --ip 192.168.1.100  # Whitelist IP
+python3 scripts/firewall.py deny --server my-server --ip 10.0.0.50      # Blacklist IP
+python3 scripts/firewall.py remove --server my-server --ip 10.0.0.50    # Remove IP from list
+```
+
+### FTP Account Management
+
+```bash
+python3 scripts/ftp.py list --server my-server                    # List FTP accounts
+python3 scripts/ftp.py create --server my-server --user ftpuser --password Secret123 --path /www/wwwroot  # Create FTP account
+python3 scripts/ftp.py delete --server my-server --id 1           # Delete FTP account
+python3 scripts/ftp.py set-password --server my-server --id 1 --password NewSecret123  # Set password
+```
+
+### PHP Version Management
+
+```bash
+python3 scripts/php.py list --server my-server              # List installed PHP versions
+python3 scripts/php.py set --server my-server --site example.com --version 83  # Set PHP version
+python3 scripts/php.py get --server my-server --site example.com  # Get current PHP version
 
 ---
 
