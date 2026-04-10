@@ -2,14 +2,14 @@
 
 ![aaPanel OpenClaw Skill](icon/bt.png)
 
-**Version:** 0.1.0-beta  
+**Version:** 0.2.0-beta  
 **Author:** [5H3LL / social5h3ll](https://github.com/social5h3ll)  
 **License:** MIT  
 **Repository:** https://github.com/social5h3ll/aapanel-openclaw-skill
 
 ---
 
-A fully-featured [OpenClaw](https://github.com/openclaw/openclaw) skill for managing and monitoring **aaPanel/BT-Panel** servers. Connect one or more aaPanel instances and run health checks, inspect services, manage files, audit SSH logs, and more — directly from OpenClaw.
+A fully-featured [OpenClaw](https://github.com/openclaw/openclaw) skill for managing and monitoring **aaPanel/BT-Panel** servers. Connect one or more aaPanel instances and manage sites, SSL certificates, databases, firewall rules, FTP accounts, PHP versions, and more — directly from OpenClaw.
 
 Built for homelab enthusiasts, sysadmins, and developers who run aaPanel as their server management panel.
 
@@ -25,6 +25,35 @@ Built for homelab enthusiasts, sysadmins, and developers who run aaPanel as thei
 - **SSH audit** — Failed/successful login attempts with IP geolocation, firewall status, Fail2Ban state
 - **Cron job inspection** — Backup tasks, shell scripts, sync jobs, log rotation
 
+### 🔒 SSL Certificates
+- List all site SSL certificates with expiry dates and issuer info
+- Provision Let's Encrypt certificates automatically
+- Renew expiring certificates
+- Revoke certificates
+
+### 🌐 Site Management
+- Create and delete websites
+- Add and remove domain bindings
+- Switch PHP versions per site
+- Full project type support: PHP, Java, Node.js, Go, Python, .NET, Proxy, Static HTML
+
+### 🗄️ Database Management
+- List all databases
+- Create and delete databases
+- Create database users with password
+- Grant and revoke user privileges
+
+### 🔥 Firewall / IP Management
+- List firewall rules and current status
+- Add IP addresses to whitelist
+- Add IP addresses to blacklist
+- Remove IPs from firewall
+
+### 📂 FTP Account Management
+- List all FTP accounts
+- Create and delete FTP users
+- Set FTP user passwords
+
 ### 📁 File Operations
 - Browse remote directories with pagination
 - Read files (full content or last N lines)
@@ -32,29 +61,6 @@ Built for homelab enthusiasts, sysadmins, and developers who run aaPanel as thei
 - Create files and directories
 - Delete to aaPanel recycle bin
 - chmod/chown with recursive directory support
-
-### 🔒 SSL Certificate Management
-- List all SSL certificates with expiry tracking
-- Provision Let's Encrypt certificates
-- Renew certificates
-- Revoke/disable SSL
-
-### 🌐 Site Management
-- Create and delete PHP sites
-- Add and remove domains from sites
-- PHP version switching per site
-
-### 🗄️ Database Management
-- List, create, and delete databases
-- User management with privilege granting
-
-### 🔥 Firewall Management
-- List firewall rules
-- IP whitelist and blacklist management
-
-### 👤 FTP Account Management
-- List, create, and delete FTP accounts
-- Password management
 
 ### ⚙️ Multi-Server Management
 - Add, list, and remove multiple aaPanel servers via config tool
@@ -92,32 +98,54 @@ python3 scripts/bt-config.py add \
 1. Log in to your aaPanel web UI
 2. Go to **Panel Settings → API Interface**
 3. Click **Get API Token**
-4. Ensure your calling server's IP is allowed in the aaPanel IP whitelist
+4. Ensure your calling server's IP is whitelisted in the aaPanel IP whitelist
 
 ### 2. Run a Health Check
 
 ```bash
-# Full system resource check
 python3 scripts/monitor.py --server my-server --format table
-
-# Site status overview
 python3 scripts/sites.py --server my-server
-
-# Service status
 python3 scripts/services.py --server my-server
 ```
 
-### 3. Browse Server Files
+### 3. Manage SSL Certificates
 
 ```bash
-# List a directory
-python3 scripts/files.py ls /www
+python3 scripts/ssl.py --server my-server --list          # List all certs
+python3 scripts/ssl.py --server my-server --issue mysite.com  # Provision Let's Encrypt
+python3 scripts/ssl.py --server my-server --renew mysite.com  # Renew certificate
+python3 scripts/ssl.py --server my-server --revoke mysite.com # Revoke certificate
+```
 
-# Read a file
-python3 scripts/files.py cat /www/server/nginx/conf/nginx.conf
+### 4. Create a Site
 
-# Edit a file
-python3 scripts/files.py edit /www/config.php "new content"
+```bash
+python3 scripts/sites_mgmt.py --server my-server --create \
+  --name mysite.com --path /www/wwwroot/mysite.com --php 82
+```
+
+### 5. Manage Databases
+
+```bash
+python3 scripts/databases.py --server my-server --list            # List databases
+python3 scripts/databases.py --server my-server --create-db mydb    # Create database
+python3 scripts/databases.py --server my-server --create-user myuser --password secret --db mydb  # Create user
+python3 scripts/databases.py --server my-server --grant myuser mydb --privileges ALL  # Grant privileges
+```
+
+### 6. Manage Firewall
+
+```bash
+python3 scripts/firewall.py --server my-server --list           # List rules
+python3 scripts/firewall.py --server my-server --add-whitelist 1.2.3.4   # Add IP to whitelist
+python3 scripts/firewall.py --server my-server --add-blacklist 5.6.7.8   # Add IP to blacklist
+python3 scripts/firewall.py --server my-server --remove-ip 5.6.7.8       # Remove IP
+```
+
+### 7. Switch PHP Version
+
+```bash
+python3 scripts/php.py --server my-server --site mysite.com --version 82
 ```
 
 ---
@@ -140,6 +168,62 @@ python3 scripts/files.py edit /www/config.php "new content"
 | `python3 scripts/logs.py --service mysql --log-type slow` | MySQL slow query log |
 | `python3 scripts/crontab.py --backup-only` | All scheduled backup tasks |
 
+### Site Management
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/sites_mgmt.py --server s1 --list` | List all sites |
+| `python3 scripts/sites_mgmt.py --server s1 --create --name site.com --path /www/wwwroot/site --php 82` | Create site |
+| `python3 scripts/sites_mgmt.py --server s1 --delete --site-id 5` | Delete site |
+| `python3 scripts/sites_mgmt.py --server s1 --add-domain --site site.com --domain api.site.com` | Add domain |
+| `python3 scripts/sites_mgmt.py --server s1 --remove-domain --site site.com --domain api.site.com` | Remove domain |
+
+### SSL Certificates
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/ssl.py --server s1 --list` | List all SSL certificates |
+| `python3 scripts/ssl.py --server s1 --issue mysite.com` | Provision Let's Encrypt cert |
+| `python3 scripts/ssl.py --server s1 --renew mysite.com` | Renew certificate |
+| `python3 scripts/ssl.py --server s1 --revoke mysite.com` | Revoke certificate |
+
+### Database Management
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/databases.py --server s1 --list` | List all databases |
+| `python3 scripts/databases.py --server s1 --create-db mydb` | Create database |
+| `python3 scripts/databases.py --server s1 --delete-db mydb` | Delete database |
+| `python3 scripts/databases.py --server s1 --create-user user --password pass --db mydb` | Create DB user |
+| `python3 scripts/databases.py --server s1 --delete-user user` | Delete DB user |
+| `python3 scripts/databases.py --server s1 --grant user mydb --privileges ALL` | Grant privileges |
+
+### Firewall
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/firewall.py --server s1 --list` | List firewall rules |
+| `python3 scripts/firewall.py --server s1 --status` | Firewall on/off status |
+| `python3 scripts/firewall.py --server s1 --add-whitelist 1.2.3.4` | Add IP to whitelist |
+| `python3 scripts/firewall.py --server s1 --add-blacklist 5.6.7.8` | Add IP to blacklist |
+| `python3 scripts/firewall.py --server s1 --remove-ip 5.6.7.8` | Remove IP from firewall |
+
+### FTP Account Management
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/ftp.py --server s1 --list` | List FTP accounts |
+| `python3 scripts/ftp.py --server s1 --create --user ftpuser --password secret --path /www/ftp` | Create FTP user |
+| `python3 scripts/ftp.py --server s1 --delete --user-id 3` | Delete FTP user |
+| `python3 scripts/ftp.py --server s1 --set-password --user-id 2 --password newpass` | Set FTP password |
+
+### PHP Version Switching
+
+| Command | Description |
+|---------|-------------|
+| `python3 scripts/php.py --server s1 --list-versions` | List installed PHP versions |
+| `python3 scripts/php.py --server s1 --site mysite.com --version 82` | Switch PHP version |
+
 ### File Operations
 
 | Command | Description |
@@ -148,9 +232,8 @@ python3 scripts/files.py edit /www/config.php "new content"
 | `python3 scripts/files.py cat /path/to/file` | Read file content |
 | `python3 scripts/files.py cat /path/to/file -n 50` | Last 50 lines |
 | `python3 scripts/files.py edit /path/to/file "content"` | Edit / overwrite file |
-| `python3 scripts/files.py edit /path/to/file -f ./local.txt` | Edit from local file |
 | `python3 scripts/files.py mkdir /www/newdir` | Create directory |
-| `python3 scripts/files.py touch /www/newfile.txt` | Create empty file |
+| `python3 scripts/files.py touch /www/test.txt` | Create empty file |
 | `python3 scripts/files.py rm /www/old.txt` | Delete file (to recycle bin) |
 | `python3 scripts/files.py chmod 755 /www/file.txt` | Change permissions |
 | `python3 scripts/files.py chmod 755 /www/dir -R` | Recursive chmod |
@@ -166,62 +249,6 @@ python3 scripts/files.py edit /www/config.php "new content"
 | `python3 scripts/bt-config.py add -n s1 -H https://... -t TOKEN` | Add a server |
 | `python3 scripts/bt-config.py remove my-server` | Remove a server |
 | `python3 scripts/bt-config.py threshold --cpu 75 --memory 80` | Set alert thresholds |
-
-### SSL Certificates
-
-| Command | Description |
-|---------|-------------|
-| `python3 scripts/ssl.py list --server s1` | List SSL certificates |
-| `python3 scripts/ssl.py info --server s1 --site example.com` | Get SSL info for site |
-| `python3 scripts/ssl.py provision --server s1 --site example.com` | Provision Let's Encrypt |
-| `python3 scripts/ssl.py renew --server s1 --site example.com` | Renew certificate |
-| `python3 scripts/ssl.py revoke --server s1 --site example.com` | Revoke certificate |
-
-### Site Management
-
-| Command | Description |
-|---------|-------------|
-| `python3 scripts/sites_mgmt.py list --server s1` | List all sites |
-| `python3 scripts/sites_mgmt.py create -n example.com -p /www/...` | Create site |
-| `python3 scripts/sites_mgmt.py delete --name example.com` | Delete site |
-| `python3 scripts/sites_mgmt.py add-domain --site example.com --domain www.example.com` | Add domain |
-| `python3 scripts/sites_mgmt.py remove-domain --site example.com --domain www.example.com` | Remove domain |
-
-### Database Management
-
-| Command | Description |
-|---------|-------------|
-| `python3 scripts/databases.py list --server s1` | List databases |
-| `python3 scripts/databases.py create --name mydb --user user --password pass` | Create database |
-| `python3 scripts/databases.py delete --name mydb` | Delete database |
-| `python3 scripts/databases.py create-user --user u --password p` | Create DB user |
-| `python3 scripts/databases.py grant --user u --db mydb` | Grant privileges |
-
-### Firewall
-
-| Command | Description |
-|---------|-------------|
-| `python3 scripts/firewall.py list --server s1` | List firewall rules |
-| `python3 scripts/firewall.py allow --ip 192.168.1.1` | Whitelist IP |
-| `python3 scripts/firewall.py deny --ip 10.0.0.1` | Blacklist IP |
-| `python3 scripts/firewall.py remove --ip 10.0.0.1 --type deny` | Remove IP |
-
-### FTP Accounts
-
-| Command | Description |
-|---------|-------------|
-| `python3 scripts/ftp.py list --server s1` | List FTP accounts |
-| `python3 scripts/ftp.py create --user u --password p --path /www` | Create FTP account |
-| `python3 scripts/ftp.py delete --id 1` | Delete FTP account |
-| `python3 scripts/ftp.py set-password --id 1 --password newpass` | Set password |
-
-### PHP Version
-
-| Command | Description |
-|---------|-------------|
-| `python3 scripts/php.py list --server s1` | List PHP versions |
-| `python3 scripts/php.py set --site example.com --version 83` | Set PHP version |
-| `python3 scripts/php.py get --site example.com` | Get current PHP version |
 
 ---
 
@@ -255,7 +282,7 @@ Server configurations and API tokens are stored in:
 ~/.openclaw/bt-skills.yaml
 ```
 
-This file is local to your machine — **it is never committed to the repository**.
+This file is local to your machine — it is never committed to the repository.
 
 ---
 
@@ -299,6 +326,14 @@ Issues, feature requests, and pull requests are welcome. If you find bugs or wan
 
 ## Changelog
 
+### v0.2.0-beta (2026-04-10)
+- **New:** SSL certificate management — list, provision Let's Encrypt, renew, revoke
+- **New:** Site management — create/delete sites, domain binding
+- **New:** Database management — create/delete databases, user management, privilege grants
+- **New:** Firewall — IP whitelist, blacklist, rule management
+- **New:** FTP account management — create/delete users, password changes
+- **New:** PHP version switching per site
+- **Improved:** 15+ new API methods in bt_client.py
+
 ### v0.1.0-beta (2026-04-10)
-- Initial combined release — monitoring + file management in one skill
-- Supports aaPanel/BT-Panel >= 9.0.0
+- Initial combined release — monitoring + file management

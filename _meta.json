@@ -1,7 +1,7 @@
 {
   "title": "btpanel",
-  "description": "aaPanel/BT-Panel server monitoring and file management skill for OpenClaw — system resources, site status, service status, SSH logs, cron jobs, and remote file operations",
-  "version": "0.1.0-beta",
+  "description": "aaPanel/BT-Panel server monitoring and file management skill for OpenClaw — system resources, site status, service status, SSL certs, SSH logs, cron jobs, file ops, databases, firewall, FTP, PHP version switching",
+  "version": "0.2.0-beta",
   "openclaw": {
     "format": "skill@1"
   },
@@ -11,6 +11,10 @@
     "btpanel",
     "aapanel",
     "file-management",
+    "ssl",
+    "database",
+    "firewall",
+    "ftp",
     "panel"
   ],
   "links": {
