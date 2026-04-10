@@ -3,7 +3,7 @@ name: btpanel
 description: aaPanel/BT-Panel server monitoring and file management skill — system resources, site status, service status, SSH logs, cron jobs, log reading, and remote file operations
 user-invocable: true
 disable-model-invocation: false
-icon: icon/bt-logo.svg
+icon: icon/bt.png
 metadata:
   openclaw:
     requires:
@@ -161,7 +161,7 @@ global:
 
 **Location:** `~/.openclaw/bt-skills.yaml`  
 **Contains:** Server configs, API tokens, alert thresholds  
-**⚠️ Never commit this file to git**
+Server configs and tokens are stored locally in `~/.openclaw/bt-skills.yaml`.
 
 ---
 

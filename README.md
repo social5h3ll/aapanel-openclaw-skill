@@ -59,7 +59,7 @@ python3 scripts/files.py cat /www/config.php
 
 ## Config File
 
-Server configs and tokens are stored in `~/.openclaw/bt-skills.yaml` — **never commit this file to git**.
+Server configs and tokens are stored locally in `~/.openclaw/bt-skills.yaml`.
 
 ## aaPanel
 
