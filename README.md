@@ -4,13 +4,13 @@
 
 [![clawhub](https://img.shields.io/badge/ClawHub-aapanel--5h3ll-ff6b35?style=flat-square)](https://clawhub.ai/skills/aapanel-5h3ll)
 [![GitHub](https://img.shields.io/badge/GitHub-social5h3ll/aapanel--openclaw--skill-24292f?style=flat-square)](https://github.com/social5h3ll/aapanel-openclaw-skill)
-[![Version](https://img.shields.io/badge/Version-0.2.0-3b82f6?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-1.0.5-3b82f6?style=flat-square)](#)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square)](#)
 [![aaPanel](https://img.shields.io/badge/aaPanel-≥9.0.0-e34f26?style=flat-square)](#)
 
 ![X](icon/x-logo.png [@social5h3ll](https://x.com/social5h3ll))
 
-**Version:** 0.2.0  
+**Version:** 1.0.5  
 **Author:** [5H3LL / social5h3ll](https://github.com/social5h3ll) · [:bird: @social5h3ll](https://x.com/social5h3ll)  
 **License:** MIT  
 **Repository:** [github.com/social5h3ll/aapanel-openclaw-skill](https://github.com/social5h3ll/aapanel-openclaw-skill)  
@@ -340,6 +340,12 @@ Issues, feature requests, and pull requests are welcome. If you find bugs or wan
 ---
 
 ## Changelog
+
+### v1.0.5 (2026-04-11)
+- **Translated:** All Chinese text in Python scripts fully translated to English
+  - All comments, docstrings, and user-facing output strings now in English
+  - No Chinese characters remain in any code, scripts, or documentation files
+- **Chore:** Updated ClawHub skill name to `aaPanel-Server-Skill`
 
 ### v0.2.0 (2026-04-10)
 - **New:** SSL certificate management — list, provision Let's Encrypt, renew, revoke
