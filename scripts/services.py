@@ -7,8 +7,8 @@
 # ]
 # ///
 """
-服务状态检查脚本
-检查服务器上运行的服务状态（Nginx/Apache/PHP/Redis/Memcached等）
+Service Status Check Script
+Checks services running on the server (Nginx/Apache/PHP/Redis/Memcached, etc.)
 """
 
 import argparse
@@ -36,39 +36,39 @@ from bt_common import (
 
 def get_server_services(client: BtClient, services: Optional[list] = None) -> dict:
     """
-    获取单个服务器的服务状态
+    Get single server's service status
 
     Args:
-        client: 宝塔客户端
-        services: 要查询的服务列表
+        client: aaPanel client
+        services: List of services to query
 
     Returns:
-        服务状态信息
+        Service status info
     """
-    # get all service status
+    # Get all service status
     service_list = client.get_all_services_status(services)
 
-    # statistics
+    # Statistics
     total = len(service_list)
     running = sum(1 for s in service_list if s.get("status"))
     stopped = sum(1 for s in service_list if s.get("installed") and not s.get("status"))
     not_installed = sum(1 for s in service_list if not s.get("installed"))
 
-    # generate alerts
+    # Generate alerts
     alerts = []
     for svc in service_list:
         if svc.get("installed") and not svc.get("status"):
             alerts.append({
                 "level": "warning",
                 "type": "service",
-                "message": f"服务 {svc.get('title', svc.get('name'))} 已停止",
+                "message": f"Service {svc.get('title', svc.get('name'))} has stopped",
                 "service": svc.get("name"),
             })
         elif svc.get("error"):
             alerts.append({
                 "level": "warning",
                 "type": "service",
-                "message": f"服务 {svc.get('name')} 状态查询失败: {svc.get('error')}",
+                "message": f"Service {svc.get('name')} status query failed: {svc.get('error')}",
                 "service": svc.get("name"),
             })
 
@@ -89,22 +89,22 @@ def get_server_services(client: BtClient, services: Optional[list] = None) -> di
 def run_services_check(manager: BtClientManager, server: Optional[str] = None,
                        services: Optional[list] = None) -> dict:
     """
-    执行服务状态检查
+    Execute service status check
 
     Args:
-        manager: 客户端管理器
-        server: 指定服务器名称
-        services: 要查询的服务列表
+        manager: Client manager
+        server: Specify server name
+        services: List of services to query
 
     Returns:
-        检查结果
+        Check results
     """
-    # 单个server
+    # Single server
     if server:
         client = manager.get_client(server)
         return get_server_services(client, services)
 
-    # 所有server
+    # All servers
     all_clients = manager.get_all_clients()
     results = {
         "timestamp": datetime.now().isoformat(),
@@ -123,14 +123,14 @@ def run_services_check(manager: BtClientManager, server: Optional[str] = None,
             service_result = get_server_services(client, services)
             results["servers"].append(service_result)
 
-            # 汇总statistics
+            # Summary statistics
             summary = service_result.get("summary", {})
             results["summary"]["total_servers"] += 1
             results["summary"]["total_services"] += summary.get("total", 0)
             results["summary"]["total_running"] += summary.get("running", 0)
             results["summary"]["total_stopped"] += summary.get("stopped", 0)
 
-            # 收集告警
+            # Collect alerts
             for alert in service_result.get("alerts", []):
                 results["alerts"].append(alert)
 
@@ -146,7 +146,7 @@ def run_services_check(manager: BtClientManager, server: Optional[str] = None,
 
 
 def print_services_table(results: dict):
-    """打印表格格式输出"""
+    """Print table-formatted output"""
     try:
         from rich.console import Console
         from rich.table import Table
@@ -155,38 +155,38 @@ def print_services_table(results: dict):
         console = Console()
 
         if "servers" in results and len(results["servers"]) > 1:
-            # 多server模式 - 显示汇总
+            # Multi-server mode - show summary
             for server_data in results["servers"]:
                 if "error" in server_data:
-                    console.print(f"[red]服务器 {server_data['server']} 连接失败: {server_data['error']}[/red]")
+                    console.print(f"[red]Server {server_data['server']} connection failed: {server_data['error']}[/red]")
                     continue
 
                 server_name = server_data.get("server", "Unknown")
                 summary = server_data.get("summary", {})
 
-                # server标题
+                # Server title
                 console.print(f"\n[bold cyan]═══ {server_name} ═══[/bold cyan]")
 
-                # 服务列表表格
+                # Service list table
                 services = server_data.get("services", [])
                 if services:
                     table = Table(show_header=True, header_style="bold")
-                    table.add_column("服务", style="cyan", width=20)
-                    table.add_column("版本", width=12)
-                    table.add_column("状态", width=10)
-                    table.add_column("安装", width=8)
+                    table.add_column("Service", style="cyan", width=20)
+                    table.add_column("Version", width=12)
+                    table.add_column("Status", width=10)
+                    table.add_column("Installed", width=8)
                     table.add_column("PID", width=8)
 
                     for svc in services:
-                        # status颜色
+                        # Status color
                         if not svc.get("installed", False):
-                            status_str = "[dim]未安装[/dim]"
+                            status_str = "[dim]Not installed[/dim]"
                         elif svc.get("status"):
-                            status_str = "[green]运行中[/green]"
+                            status_str = "[green]Running[/green]"
                         else:
-                            status_str = "[red]已停止[/red]"
+                            status_str = "[red]Stopped[/red]"
 
-                        # 安装status
+                        # Installation status
                         installed_str = "✓" if svc.get("installed") else "-"
 
                         # PID
@@ -203,58 +203,58 @@ def print_services_table(results: dict):
 
                     console.print(table)
                 else:
-                    console.print("[yellow]无服务信息[/yellow]")
+                    console.print("[yellow]No service info[/yellow]")
 
-                # 汇总
-                console.print(f"\n[dim]汇总: "
-                             f"总数 {summary.get('total', 0)}, "
-                             f"[green]运行 {summary.get('running', 0)}[/green], "
-                             f"[red]停止 {summary.get('stopped', 0)}[/red], "
-                             f"[dim]未安装 {summary.get('not_installed', 0)}[/dim][/dim]")
+                # Summary
+                console.print(f"\n[dim]Summary: "
+                             f"Total {summary.get('total', 0)}, "
+                             f"[green]Running {summary.get('running', 0)}[/green], "
+                             f"[red]Stopped {summary.get('stopped', 0)}[/red], "
+                             f"[dim]Not installed {summary.get('not_installed', 0)}[/dim][/dim]")
 
-                # 告警
+                # Alerts
                 alerts = server_data.get("alerts", [])
                 if alerts:
-                    console.print("\n[yellow]告警:[/yellow]")
+                    console.print("\n[yellow]Alerts:[/yellow]")
                     for alert in alerts[:5]:
                         level = alert.get("level", "warning")
                         color = "red" if level == "critical" else "yellow"
                         console.print(f"  [{color}]• {alert.get('message', '')}[/{color}]")
 
-            # 总汇总
+            # Total summary
             summary = results.get("summary", {})
-            console.print(f"\n[bold]总汇总:[/bold] "
-                         f"服务器: {summary.get('total_servers', 0)}, "
-                         f"服务总数: {summary.get('total_services', 0)}, "
-                         f"[green]运行: {summary.get('total_running', 0)}[/green], "
-                         f"[red]停止: {summary.get('total_stopped', 0)}[/red]")
+            console.print(f"\n[bold]Total Summary:[/bold] "
+                         f"Servers: {summary.get('total_servers', 0)}, "
+                         f"Total services: {summary.get('total_services', 0)}, "
+                         f"[green]Running: {summary.get('total_running', 0)}[/green], "
+                         f"[red]Stopped: {summary.get('total_stopped', 0)}[/red]")
 
         else:
-            # 单server模式
+            # Single server mode
             server_name = results.get("server", "Unknown")
 
-            # 基本info
-            console.print(Panel(f"[bold]{server_name}[/bold]", title="服务器"))
+            # Basic info
+            console.print(Panel(f"[bold]{server_name}[/bold]", title="Server"))
 
             services = results.get("services", [])
             if services:
                 table = Table(show_header=True, header_style="bold")
-                table.add_column("服务", style="cyan")
-                table.add_column("版本")
-                table.add_column("状态")
-                table.add_column("安装")
+                table.add_column("Service", style="cyan")
+                table.add_column("Version")
+                table.add_column("Status")
+                table.add_column("Installed")
                 table.add_column("PID")
 
                 for svc in services:
-                    # status颜色
+                    # Status color
                     if not svc.get("installed", False):
-                        status_str = "[dim]未安装[/dim]"
+                        status_str = "[dim]Not installed[/dim]"
                     elif svc.get("status"):
-                        status_str = "[green]运行中[/green]"
+                        status_str = "[green]Running[/green]"
                     else:
-                        status_str = "[red]已停止[/red]"
+                        status_str = "[red]Stopped[/red]"
 
-                    # 安装status
+                    # Installation status
                     installed_str = "✓" if svc.get("installed") else "-"
 
                     # PID
@@ -271,100 +271,100 @@ def print_services_table(results: dict):
 
                 console.print(table)
             else:
-                console.print("[yellow]无服务信息[/yellow]")
+                console.print("[yellow]No service info[/yellow]")
 
-            # 汇总
+            # Summary
             summary = results.get("summary", {})
-            console.print(f"\n[bold]汇总:[/bold]")
-            console.print(f"  总数: {summary.get('total', 0)}")
-            console.print(f"  [green]运行: {summary.get('running', 0)}[/green]")
-            console.print(f"  [red]停止: {summary.get('stopped', 0)}[/red]")
-            console.print(f"  [dim]未安装: {summary.get('not_installed', 0)}[/dim]")
+            console.print(f"\n[bold]Summary:[/bold]")
+            console.print(f"  Total: {summary.get('total', 0)}")
+            console.print(f"  [green]Running: {summary.get('running', 0)}[/green]")
+            console.print(f"  [red]Stopped: {summary.get('stopped', 0)}[/red]")
+            console.print(f"  [dim]Not installed: {summary.get('not_installed', 0)}[/dim]")
 
-            # 告警
+            # Alerts
             alerts = results.get("alerts", [])
             if alerts:
-                console.print(f"\n[bold yellow]告警 ({len(alerts)}条):[/bold yellow]")
+                console.print(f"\n[bold yellow]Alerts ({len(alerts)}):[/bold yellow]")
                 for alert in alerts:
                     level = alert.get("level", "warning")
                     color = "red" if level == "critical" else "yellow"
                     console.print(f"  [{color}]• {alert.get('message', '')}[/{color}]")
 
     except ImportError:
-        print("请安装rich库以使用表格输出: pip install rich")
+        print("Please install rich library for table output: pip install rich")
         print(json.dumps(results, ensure_ascii=False, indent=2))
 
 
 def main():
-    """主函数"""
+    """Main function"""
     parser = argparse.ArgumentParser(
-        description="宝塔面板服务状态检查",
+        description="aaPanel Service Status Check",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-示例:
-  # 检查所有server的服务status
+Examples:
+  # Check all servers' service status
   %(prog)s
 
-  # 检查指定server
+  # Check specific server
   %(prog)s --server prod-01
 
-  # 只检查特定服务
+  # Only check specific services
   %(prog)s --service nginx --service redis
 
-  # JSON格式输出
+  # JSON format output
   %(prog)s --format json
 
-  # 输出到file
+  # Output to file
   %(prog)s --output services.json
 
-支持的服务: nginx, apache, mysql, redis, memcached, pure-ftpd
-PHP服务: 自动检测已安装的PHP版本（php-8.2, php-7.4等）
-PostgreSQL: 需要安装pgsql_manager插件
+Supported services: nginx, apache, mysql, redis, memcached, pure-ftpd
+PHP services: Auto-detect installed PHP versions (php-8.2, php-7.4, etc.)
+PostgreSQL: Requires pgsql_manager plugin
 
-字段说明:
-  installed (setup): 服务是否已安装
-  status: 服务是否正在运行（仅installed=true时有意义）
-  version: 已安装的版本号
-  pid: 主进程ID（运行中时）
+Field descriptions:
+  installed (setup): Whether service is installed
+  status: Whether service is running (only meaningful when installed=true)
+  version: Installed version number
+  pid: Main process ID (when running)
         """,
     )
-    parser.add_argument("--server", "-s", help="指定服务器名称")
-    parser.add_argument("--format", "-f", choices=["json", "table"], default="table", help="输出格式")
-    parser.add_argument("--output", "-o", help="输出文件路径")
+    parser.add_argument("--server", "-s", help="Specify server name")
+    parser.add_argument("--format", "-f", choices=["json", "table"], default="table", help="Output format")
+    parser.add_argument("--output", "-o", help="Output file path")
     parser.add_argument("--service", action="append", dest="services",
-                        help="指定要检查的服务（可多次指定）")
-    parser.add_argument("--config", "-c", help="配置文件路径")
+                        help="Specify services to check (can be used multiple times)")
+    parser.add_argument("--config", "-c", help="Config file path")
 
     args = parser.parse_args()
 
-    # 初始化client manager
+    # Initialize client manager
     manager = BtClientManager()
 
     try:
         manager.load_config(args.config)
     except FileNotFoundError as e:
-        print(f"错误: {e}", file=sys.stderr)
-        print("请先配置服务器: bt-config.py add", file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
+        print("Please configure server first: bt-config.py add", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"加载配置失败: {e}", file=sys.stderr)
+        print(f"Failed to load config: {e}", file=sys.stderr)
         sys.exit(1)
 
     if not manager.get_all_clients():
-        print("错误: 没有配置任何服务器", file=sys.stderr)
+        print("Error: No servers configured", file=sys.stderr)
         sys.exit(1)
 
-    # 执行检查
+    # Execute check
     try:
         results = run_services_check(manager, args.server, args.services)
     except KeyError as e:
-        print(f"错误: 未找到服务器 {e}", file=sys.stderr)
+        print(f"Error: Server not found {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"检查失败: {e}", file=sys.stderr)
+        print(f"Check failed: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # 输出result
+    # Output result
     if args.format == "table":
         print_services_table(results)
     else:
@@ -372,7 +372,7 @@ PostgreSQL: 需要安装pgsql_manager插件
         if args.output:
             with open(args.output, "w", encoding="utf-8") as f:
                 f.write(output)
-            print(f"结果已保存到: {args.output}")
+            print(f"Result saved to: {args.output}")
         else:
             print(output)
 

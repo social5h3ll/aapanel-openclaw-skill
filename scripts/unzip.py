@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """
-宝塔面板文件解压脚本
+aaPanel File Extraction Script
 
-功能：
-- 解压 zip/tar.gz/tar.bz2 文件
-- 支持解压密码
-- 设置解压后目录权限
+Features:
+- Extract zip/tar.gz/tar.bz2 files
+- Support password-protected archives
+- Set directory permissions after extraction
 
-API 参考：
-- /files?action=UnZip - 解压文件
+API Reference:
+- /files?action=UnZip - Extract files
 """
 
 import sys
 import argparse
 from pathlib import Path
 
-# 添加父directory到 sys.path 以支持导入 bt_common
+# Add parent directory to sys.path to support importing bt_common
 _script_dir = Path(__file__).parent
 _skill_root = _script_dir.parent
 if (_skill_root / "bt_common").exists():
@@ -28,7 +28,7 @@ from bt_common.config import get_servers
 
 
 def get_client(server_name: str = None) -> BtClient:
-    """获取宝塔面板客户端"""
+    """Get aaPanel client."""
     if server_name:
         servers = get_servers()
         for server in servers:
@@ -48,14 +48,14 @@ def get_client(server_name: str = None) -> BtClient:
                     timeout=config['timeout'],
                     verify_ssl=config['verify_ssl']
                 )
-        raise ValueError(f"未找到服务器：{server_name}")
+        raise ValueError(f"Server not found: {server_name}")
     else:
         manager = BtClientManager()
         return manager.get_client()
 
 
 def get_archive_type(filepath: str) -> str:
-    """根据file扩展名判断压缩type"""
+    """Determine archive type from file extension."""
     filepath = filepath.lower()
     if filepath.endswith('.zip'):
         return 'zip'
@@ -78,7 +78,7 @@ def get_archive_type(filepath: str) -> str:
 
 
 def format_size(size_bytes: int) -> str:
-    """格式化filesize"""
+    """Format file size."""
     if size_bytes < 1024:
         return f"{size_bytes}B"
     elif size_bytes < 1024 * 1024:
@@ -90,21 +90,21 @@ def format_size(size_bytes: int) -> str:
 
 
 def cmd_unzip(args):
-    """解压file"""
+    """Extract archive."""
     client = get_client(args.server)
-    
-    # 自动检测压缩type
+
+    # Auto-detect archive type
     archive_type = args.type or get_archive_type(args.source)
-    
-    print(f"\n📤 解压文件...")
-    print(f"   源文件: {args.source}")
-    print(f"   目标目录: {args.dest}")
-    print(f"   压缩类型: {archive_type}")
+
+    print(f"\n📤 Extracting file...")
+    print(f"   Source: {args.source}")
+    print(f"   Destination: {args.dest}")
+    print(f"   Archive type: {archive_type}")
     if args.password:
-        print(f"   解压密码: {'*' * len(args.password)}")
-    print(f"   目录权限: {args.permission}")
+        print(f"   Password: {'*' * len(args.password)}")
+    print(f"   Directory permissions: {args.permission}")
     print()
-    
+
     endpoint = "/files?action=UnZip"
     params = {
         "sfile": args.source,
@@ -114,126 +114,126 @@ def cmd_unzip(args):
         "password": args.password or "",
         "power": args.permission
     }
-    
+
     try:
         result = client.request(endpoint, params)
-        
+
         if result.get('status'):
-            print(f"✅ {result.get('msg', '文件解压成功!')}")
-            print(f"   解压路径: {args.dest}")
+            print(f"✅ {result.get('msg', 'File extracted successfully!')}")
+            print(f"   Extracted to: {args.dest}")
             return 0
         else:
-            print(f"❌ 解压失败：{result.get('msg', '未知错误')}")
+            print(f"❌ Extraction failed: {result.get('msg', 'Unknown error')}")
             return 1
-            
+
     except Exception as e:
-        print(f"❌ 请求失败：{e}")
+        print(f"❌ Request failed: {e}")
         return 1
 
 
 def cmd_info(args):
-    """查看压缩包info（预览content）"""
+    """Show archive info."""
     client = get_client(args.server)
-    
-    # 获取fileinfo
+
+    # Get file info
     endpoint = "/files?action=GetFileBody"
     params = {
         "path": args.source
     }
-    
-    print(f"\n📦 压缩包信息: {args.source}")
+
+    print(f"\n📦 Archive info: {args.source}")
     print("-" * 50)
-    
-    # 由于 API 可能不支持预览，我们先显示基本info
+
+    # API may not support preview, show basic info
     archive_type = get_archive_type(args.source)
-    print(f"   压缩类型: {archive_type}")
-    print(f"   文件路径: {args.source}")
+    print(f"   Archive type: {archive_type}")
+    print(f"   File path: {args.source}")
     print()
-    print("💡 使用 unzip 命令解压此文件")
+    print("💡 Use unzip command to extract this file")
 
 
 def cmd_support(args):
-    """显示支持的压缩格式"""
-    print("\n📦 支持的压缩格式:")
+    """Show supported archive formats."""
+    print("\n📦 Supported archive formats:")
     print("-" * 50)
-    
+
     formats = [
-        ("zip", "ZIP 压缩包", "最常用"),
-        ("tar.gz", "Gzip 压缩包", "Linux 常用"),
-        ("tar.bz2", "Bzip2 压缩包", "压缩率高"),
-        ("tar", "TAR 归档", "无压缩归档"),
-        ("gz", "Gzip 单文件", "单文件压缩"),
-        ("bz2", "Bzip2 单文件", "单文件压缩"),
-        ("rar", "RAR 压缩包", "需要 unrar"),
-        ("7z", "7-Zip 压缩包", "高压缩率"),
+        ("zip", "ZIP archive", "Most common"),
+        ("tar.gz", "Gzip archive", "Common on Linux"),
+        ("tar.bz2", "Bzip2 archive", "High compression"),
+        ("tar", "TAR archive", "No compression"),
+        ("gz", "Gzip single file", "Single file compression"),
+        ("bz2", "Bzip2 single file", "Single file compression"),
+        ("rar", "RAR archive", "Requires unrar"),
+        ("7z", "7-Zip archive", "High compression ratio"),
     ]
-    
+
     for fmt, name, note in formats:
         print(f"   {fmt:<10} {name:<20} ({note})")
-    
+
     print()
-    print("💡 自动检测：根据文件扩展名自动识别压缩类型")
+    print("💡 Auto-detection: automatically identifies archive type from file extension")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="宝塔面板文件解压工具",
+        description="aaPanel file extraction tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-示例:
-  # 解压 WordPress（自动检测type）
-  python3 unzip.py -s "内网 172" unzip \\
+Examples:
+  # Extract WordPress (auto-detect type)
+  python3 unzip.py -s "herobox" unzip \\
       --source "/www/test/wordpress.zip" \\
       --dest "/www/test"
 
-  # 解压带密码的压缩包
-  python3 unzip.py -s "内网 172" unzip \\
+  # Extract password-protected archive
+  python3 unzip.py -s "herobox" unzip \\
       --source "/www/test/protected.zip" \\
       --dest "/www/test" \\
       --password "mypassword"
 
-  # 解压 tar.gz 并设置permissions
-  python3 unzip.py -s "内网 172" unzip \\
+  # Extract tar.gz with permissions
+  python3 unzip.py -s "herobox" unzip \\
       --source "/www/test/backup.tar.gz" \\
       --dest "/www/backup" \\
       --permission 755
 
-  # 查看支持的格式
+  # Show supported formats
   python3 unzip.py support
         """
     )
-    
-    # 全局parameter
-    parser.add_argument('-s', '--server', help='服务器名称')
-    
-    subparsers = parser.add_subparsers(dest='command', help='子命令')
-    
-    # unzip 命令
-    unzip_parser = subparsers.add_parser('unzip', help='解压文件')
-    unzip_parser.add_argument('--source', required=True, help='源文件路径（压缩包路径）')
-    unzip_parser.add_argument('--dest', required=True, help='目标目录（解压到哪）')
+
+    # Global arguments
+    parser.add_argument('-s', '--server', help='Server name')
+
+    subparsers = parser.add_subparsers(dest='command', help='Subcommands')
+
+    # unzip command
+    unzip_parser = subparsers.add_parser('unzip', help='Extract files')
+    unzip_parser.add_argument('--source', required=True, help='Source file path (archive path)')
+    unzip_parser.add_argument('--dest', required=True, help='Destination directory (where to extract)')
     unzip_parser.add_argument('--type', choices=['zip', 'tar.gz', 'tar.bz2', 'tar', 'gz', 'bz2', 'rar', '7z'],
-                              help='压缩类型（自动检测）')
-    unzip_parser.add_argument('--password', help='解压密码（如果有）')
-    unzip_parser.add_argument('--coding', default='UTF-8', help='文件名编码（默认 UTF-8）')
-    unzip_parser.add_argument('--permission', default='755', help='解压后目录权限（默认 755）')
+                              help='Archive type (auto-detect)')
+    unzip_parser.add_argument('--password', help='Extraction password (if any)')
+    unzip_parser.add_argument('--coding', default='UTF-8', help='Filename encoding (default UTF-8)')
+    unzip_parser.add_argument('--permission', default='755', help='Post-extraction directory permissions (default 755)')
     unzip_parser.set_defaults(func=cmd_unzip)
-    
-    # info 命令
-    info_parser = subparsers.add_parser('info', help='查看压缩包信息')
-    info_parser.add_argument('--source', required=True, help='压缩包路径')
+
+    # info command
+    info_parser = subparsers.add_parser('info', help='Show archive info')
+    info_parser.add_argument('--source', required=True, help='Archive path')
     info_parser.set_defaults(func=cmd_info)
-    
-    # support 命令
-    support_parser = subparsers.add_parser('support', help='显示支持的压缩格式')
+
+    # support command
+    support_parser = subparsers.add_parser('support', help='Show supported archive formats')
     support_parser.set_defaults(func=cmd_support)
-    
+
     args = parser.parse_args()
-    
+
     if not args.command:
         parser.print_help()
         return 1
-    
+
     return args.func(args)
 
 

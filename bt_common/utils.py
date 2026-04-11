@@ -2,8 +2,8 @@
 # dependencies = []
 # ///
 """
-工具函数模块
-提供格式化输出、阈值检查、告警生成等功能
+Utility Functions Module
+Provides formatted output, threshold checks, and alert generation
 """
 
 from dataclasses import dataclass, field
@@ -13,7 +13,7 @@ from typing import Any, Optional
 
 @dataclass
 class Alert:
-    """告警info"""
+    """Alert info"""
 
     level: str  # warning, critical
     type: str  # cpu, memory, disk, service, ssl, security
@@ -24,14 +24,14 @@ class Alert:
 
 def format_bytes(bytes_value: int, decimals: int = 2) -> str:
     """
-    格式化字节大小为人类可读格式
+    Format byte size to human-readable format
 
     Args:
-        bytes_value: 字节数
-        decimals: 小数位数
+        bytes_value: Number of bytes
+        decimals: Number of decimal places
 
     Returns:
-        格式化后的字符串
+        Formatted string
     """
     if bytes_value == 0:
         return "0 B"
@@ -50,34 +50,34 @@ def format_bytes(bytes_value: int, decimals: int = 2) -> str:
 
 def format_uptime(seconds: int) -> str:
     """
-    格式化运行时间
+    Format uptime
 
     Args:
-        seconds: 秒数
+        seconds: Number of seconds
 
     Returns:
-        格式化后的字符串
+        Formatted string
     """
     days = seconds // 86400
     hours = (seconds % 86400) // 3600
     minutes = (seconds % 3600) // 60
 
     if days > 0:
-        return f"{days}天{hours}小时"
+        return f"{days}d {hours}h"
     if hours > 0:
-        return f"{hours}小时{minutes}分钟"
-    return f"{minutes}分钟"
+        return f"{hours}h {minutes}m"
+    return f"{minutes}m"
 
 
 def format_timestamp(ts: Optional[str] = None) -> str:
     """
-    格式化时间戳
+    Format timestamp
 
     Args:
-        ts: ISO格式时间戳，为None时使用当前时间
+        ts: ISO format timestamp, uses current time if None
 
     Returns:
-        格式化后的时间字符串
+        Formatted timestamp string
     """
     if ts:
         try:
@@ -90,14 +90,14 @@ def format_timestamp(ts: Optional[str] = None) -> str:
 
 def parse_system_monitor_data(data: dict, server_name: str) -> dict:
     """
-    解析系统监控数据（GetNetWork接口返回）
+    Parse system monitor data (from GetNetWork API response)
 
     Args:
-        data: 原始API响应
-        server_name: 服务器名称
+        data: Raw API response
+        server_name: Server name
 
     Returns:
-        格式化后的系统监控数据
+        Formatted system monitor data
     """
     result = {
         "server": server_name,
@@ -109,8 +109,8 @@ def parse_system_monitor_data(data: dict, server_name: str) -> dict:
         "docker_running": data.get("docker_run", False),
     }
 
-    # 解析CPU数据
-    # cpu格式: [usage率%, 核心数, [用户态%, 系统态%], CPU型号, ?, ?]
+    # Parse CPU data
+    # cpu format: [usage_rate%, core_count, [user_mode%, system_mode%], CPU_model, ?, ?]
     cpu_data = data.get("cpu", [])
     if isinstance(cpu_data, list) and len(cpu_data) >= 4:
         result["cpu"] = {
@@ -123,7 +123,7 @@ def parse_system_monitor_data(data: dict, server_name: str) -> dict:
     else:
         result["cpu"] = {"usage": 0, "cores": 1, "model": "Unknown"}
 
-    # 解析CPUtime分布
+    # Parse CPU time distribution
     cpu_times = data.get("cpu_times", {})
     if cpu_times:
         result["cpu"]["times"] = {
@@ -132,13 +132,13 @@ def parse_system_monitor_data(data: dict, server_name: str) -> dict:
             "idle": round(cpu_times.get("idle", 0), 2),
             "iowait": round(cpu_times.get("iowait", 0), 2),
         }
-        # 进程数
+        # Process count
         result["processes"] = {
-            "total": cpu_times.get("总进程数", 0),
-            "active": cpu_times.get("活动进程数", 0),
+            "total": cpu_times.get("total_processes", 0),
+            "active": cpu_times.get("active_processes", 0),
         }
 
-    # 解析负载
+    # Parse load data
     load_data = data.get("load", {})
     if load_data:
         result["load"] = {
@@ -149,7 +149,7 @@ def parse_system_monitor_data(data: dict, server_name: str) -> dict:
             "safe_limit": load_data.get("safe", 1),
         }
 
-    # 解析内存数据 (单位: MB)
+    # Parse memory data (unit: MB)
     mem_data = data.get("mem", {})
     if mem_data:
         mem_total = mem_data.get("memTotal", 0)
@@ -172,7 +172,7 @@ def parse_system_monitor_data(data: dict, server_name: str) -> dict:
             "available_percent": round((mem_available / mem_total * 100), 2) if mem_total > 0 else 0,
         }
 
-    # 解析磁盘数据
+    # Parse disk data
     disk_list = data.get("disk", [])
     disks = []
     total_size = 0
@@ -187,7 +187,7 @@ def parse_system_monitor_data(data: dict, server_name: str) -> dict:
             disk_used = byte_size[1] if isinstance(byte_size, list) and len(byte_size) > 1 else 0
             disk_free = byte_size[2] if isinstance(byte_size, list) and len(byte_size) > 2 else 0
 
-            # 跳过挂载的远程存储（如ossfs）
+            # Skip mounted remote storage (e.g., ossfs)
             filesystem = disk.get("filesystem", "")
             if "fuse" in filesystem.lower() or "ossfs" in filesystem.lower():
                 continue
@@ -220,7 +220,7 @@ def parse_system_monitor_data(data: dict, server_name: str) -> dict:
         "percent": round((total_used / total_size * 100), 2) if total_size > 0 else 0,
     }
 
-    # 解析网络数据
+    # Parse network data
     result["network"] = {
         "total_up": format_bytes(data.get("upTotal", 0)),
         "total_down": format_bytes(data.get("downTotal", 0)),
@@ -231,7 +231,7 @@ def parse_system_monitor_data(data: dict, server_name: str) -> dict:
         "interfaces": {},
     }
 
-    # 各网卡数据
+    # Per NIC data
     network_ifaces = data.get("network", {})
     for iface, stats in network_ifaces.items():
         if isinstance(stats, dict):
@@ -242,14 +242,14 @@ def parse_system_monitor_data(data: dict, server_name: str) -> dict:
                 "current_down": round(stats.get("down", 0), 2),
             }
 
-    # 资源statistics
+    # Resource statistics
     result["resources"] = {
         "sites": data.get("site_total", 0),
         "databases": data.get("database_total", 0),
         "ftp_accounts": data.get("ftp_total", 0),
     }
 
-    # IOstatistics
+    # IO statistics
     iostat = data.get("iostat", {})
     if iostat and "ALL" in iostat:
         all_io = iostat["ALL"]
@@ -265,27 +265,27 @@ def parse_system_monitor_data(data: dict, server_name: str) -> dict:
 
 def parse_system_status_legacy(data: dict, server_name: str) -> dict:
     """
-    解析旧版系统状态响应（GetSystemTotal接口）
+    Parse legacy system status response (GetSystemTotal API)
 
     Args:
-        data: 原始API响应
-        server_name: 服务器名称
+        data: Raw API response
+        server_name: Server name
 
     Returns:
-        格式化后的系统状态
+        Formatted system status
     """
     mem_total = data.get("mem_total", 0)
     mem_used = data.get("mem_used", 0)
     disk_total = data.get("disk_total", 0)
     disk_used = data.get("disk_used", 0)
 
-    # 转换为GB
+    # Convert to GB
     mem_total_gb = mem_total / 1024 / 1024 / 1024 if mem_total else 0
     mem_used_gb = mem_used / 1024 / 1024 / 1024 if mem_used else 0
     disk_total_gb = disk_total / 1024 / 1024 / 1024 if disk_total else 0
     disk_used_gb = disk_used / 1024 / 1024 / 1024 if disk_used else 0
 
-    # 计算百分比
+    # Calculate percentage
     mem_percent = (mem_used / mem_total * 100) if mem_total > 0 else 0
     disk_percent = (disk_used / disk_total * 100) if disk_total > 0 else 0
 
@@ -319,14 +319,14 @@ def parse_system_status_legacy(data: dict, server_name: str) -> dict:
 
 def check_thresholds(metrics: dict, thresholds: dict) -> list[Alert]:
     """
-    检查阈值告警
+    Check threshold alerts
 
     Args:
-        metrics: 格式化后的指标数据（来自parse_system_monitor_data）
-        thresholds: 阈值配置
+        metrics: Formatted metrics data (from parse_system_monitor_data)
+        thresholds: Threshold config
 
     Returns:
-        告警列表
+        Alert list
     """
     alerts = []
 
@@ -334,7 +334,7 @@ def check_thresholds(metrics: dict, thresholds: dict) -> list[Alert]:
     memory_threshold = thresholds.get("memory", 85)
     disk_threshold = thresholds.get("disk", 90)
 
-    # CPU告警
+    # CPU alert
     cpu_data = metrics.get("cpu", {})
     cpu_usage = cpu_data.get("usage", 0)
     if cpu_usage >= cpu_threshold:
@@ -342,12 +342,12 @@ def check_thresholds(metrics: dict, thresholds: dict) -> list[Alert]:
             Alert(
                 level="warning",
                 type="cpu",
-                message=f"CPU使用率过高: {cpu_usage}% (阈值: {cpu_threshold}%)",
+                message=f"CPU usage too high: {cpu_usage}% (threshold: {cpu_threshold}%)",
                 value=cpu_usage,
             )
         )
 
-    # 内存告警
+    # Memory alert
     mem_data = metrics.get("memory", {})
     mem_percent = mem_data.get("percent", 0)
     if mem_percent >= memory_threshold:
@@ -355,7 +355,7 @@ def check_thresholds(metrics: dict, thresholds: dict) -> list[Alert]:
             Alert(
                 level="warning",
                 type="memory",
-                message=f"内存使用率过高: {mem_percent}% (阈值: {memory_threshold}%)",
+                message=f"Memory usage too high: {mem_percent}% (threshold: {memory_threshold}%)",
                 value=mem_percent,
                 extra={
                     "used_mb": mem_data.get("used_mb"),
@@ -364,7 +364,7 @@ def check_thresholds(metrics: dict, thresholds: dict) -> list[Alert]:
             )
         )
 
-    # 磁盘告警
+    # Disk alert
     disk_data = metrics.get("disk", {})
     disk_percent = disk_data.get("percent", 0)
     if disk_percent >= disk_threshold:
@@ -372,7 +372,7 @@ def check_thresholds(metrics: dict, thresholds: dict) -> list[Alert]:
             Alert(
                 level="critical",
                 type="disk",
-                message=f"磁盘使用率过高: {disk_percent}% (阈值: {disk_threshold}%)",
+                message=f"Disk usage too high: {disk_percent}% (threshold: {disk_threshold}%)",
                 value=disk_percent,
                 extra={
                     "used_human": disk_data.get("used_human"),
@@ -381,7 +381,7 @@ def check_thresholds(metrics: dict, thresholds: dict) -> list[Alert]:
             )
         )
 
-    # 检查各磁盘分区
+    # Check individual disk partitions
     for disk in disk_data.get("disks", []):
         disk_p = disk.get("percent", 0)
         if disk_p >= disk_threshold:
@@ -389,24 +389,24 @@ def check_thresholds(metrics: dict, thresholds: dict) -> list[Alert]:
                 Alert(
                     level="critical" if disk_p >= 95 else "warning",
                     type="disk",
-                    message=f"磁盘分区 {disk.get('path', '/')} 使用率过高: {disk_p}%",
+                    message=f"Disk partition {disk.get('path', '/')} usage too high: {disk_p}%",
                     value=disk_p,
                     extra={"path": disk.get("path")},
                 )
             )
 
-    # 负载告警
+    # Load alert
     load_data = metrics.get("load", {})
     if load_data:
         one_min_load = load_data.get("one_minute", 0)
         cpu_count = load_data.get("cpu_count", 1)
-        # 负载超过CPU核心数时告警
+        # Alert when load exceeds CPU core count
         if one_min_load >= cpu_count:
             alerts.append(
                 Alert(
                     level="warning",
                     type="load",
-                    message=f"系统负载过高: {one_min_load} (CPU核心数: {cpu_count})",
+                    message=f"System load too high: {one_min_load} (CPU cores: {cpu_count})",
                     value=one_min_load,
                 )
             )
@@ -416,14 +416,14 @@ def check_thresholds(metrics: dict, thresholds: dict) -> list[Alert]:
 
 def format_security_report(data: dict, server_name: str) -> dict:
     """
-    格式化安全报告
+    Format security report
 
     Args:
-        data: 原始安全数据
-        server_name: 服务器名称
+        data: Raw security data
+        server_name: Server name
 
     Returns:
-        格式化后的安全报告
+        Formatted security report
     """
     return {
         "server": server_name,
@@ -446,14 +446,14 @@ def format_security_report(data: dict, server_name: str) -> dict:
 
 def format_service_status(services: list, server_name: str) -> dict:
     """
-    格式化服务状态
+    Format service status
 
     Args:
-        services: 服务列表
-        server_name: 服务器名称
+        services: Service list
+        server_name: Server name
 
     Returns:
-        格式化后的服务状态
+        Formatted service status
     """
     formatted_services = []
     running_count = 0
@@ -489,19 +489,19 @@ def format_service_status(services: list, server_name: str) -> dict:
 
 def check_ssl_status(ssl_data) -> dict:
     """
-    检查SSL证书状态
+    Check SSL certificate status
 
     Args:
-        ssl_data: SSL数据（可能是dict或-1或None）
+        ssl_data: SSL data (can be dict, -1, or None)
 
     Returns:
-        SSL状态信息
+        SSL status info
     """
     if ssl_data == -1 or ssl_data is None:
-        return {"status": "none", "enabled": False, "message": "未配置SSL", "days_remaining": None}
+        return {"status": "none", "enabled": False, "message": "SSL not configured", "days_remaining": None}
 
     if not isinstance(ssl_data, dict):
-        return {"status": "unknown", "enabled": False, "message": "SSL状态未知", "days_remaining": None}
+        return {"status": "unknown", "enabled": False, "message": "SSL status unknown", "days_remaining": None}
 
     endtime = ssl_data.get("endtime", 0)
     if endtime is None:
@@ -511,7 +511,7 @@ def check_ssl_status(ssl_data) -> dict:
         return {
             "status": "expired",
             "enabled": True,
-            "message": f"已过期{-endtime}天",
+            "message": f"Expired {-endtime} days ago",
             "days_remaining": endtime,
             "issuer": ssl_data.get("issuer_O", "Unknown"),
             "not_after": ssl_data.get("notAfter", ""),
@@ -520,7 +520,7 @@ def check_ssl_status(ssl_data) -> dict:
         return {
             "status": "critical",
             "enabled": True,
-            "message": f"将在{endtime}天内过期",
+            "message": f"Expires in {endtime} days",
             "days_remaining": endtime,
             "issuer": ssl_data.get("issuer_O", "Unknown"),
             "not_after": ssl_data.get("notAfter", ""),
@@ -529,7 +529,7 @@ def check_ssl_status(ssl_data) -> dict:
         return {
             "status": "warning",
             "enabled": True,
-            "message": f"将在{endtime}天内过期",
+            "message": f"Expires in {endtime} days",
             "days_remaining": endtime,
             "issuer": ssl_data.get("issuer_O", "Unknown"),
             "not_after": ssl_data.get("notAfter", ""),
@@ -538,7 +538,7 @@ def check_ssl_status(ssl_data) -> dict:
         return {
             "status": "valid",
             "enabled": True,
-            "message": f"剩余{endtime}天",
+            "message": f"{endtime} days remaining",
             "days_remaining": endtime,
             "issuer": ssl_data.get("issuer_O", "Unknown"),
             "not_after": ssl_data.get("notAfter", ""),
@@ -547,24 +547,24 @@ def check_ssl_status(ssl_data) -> dict:
 
 def parse_php_site(site: dict, server_name: str) -> dict:
     """
-    解析PHP网站数据
+    Parse PHP site data
 
     Args:
-        site: 网站数据
-        server_name: 服务器名称
+        site: Site data
+        server_name: Server name
 
     Returns:
-        格式化后的网站信息
+        Formatted site info
     """
-    # 判断运行status
+    # Determine running status
     status = "running" if site.get("status") == "1" and not site.get("stop") else "stopped"
 
-    # 解析SSL
+    # Parse SSL
     ssl_info = check_ssl_status(site.get("ssl"))
 
-    # 解析PHP版本
+    # Parse PHP version
     php_version = site.get("php_version", "")
-    if php_version in ["静态", "其它", "其他"]:
+    if php_version in ["static", "Static", "other", "Other"]:
         php_version = "static"
 
     return {
@@ -580,7 +580,7 @@ def parse_php_site(site: dict, server_name: str) -> dict:
         "waf_enabled": site.get("waf", {}).get("status", False),
         "backup_count": site.get("backup_count", 0),
         "ssl": ssl_info,
-        "process": None,  # PHP项目无进程info
+        "process": None,  # PHP projects have no process info
         "addtime": site.get("addtime", ""),
         "ps": site.get("ps", ""),
     }
@@ -588,26 +588,26 @@ def parse_php_site(site: dict, server_name: str) -> dict:
 
 def parse_project_site(project: dict, server_name: str) -> dict:
     """
-    解析项目类型网站数据（Java/Node/Go/Python/.NET/Other）
+    Parse project-type site data (Java/Node/Go/Python/.NET/Other)
 
     Args:
-        project: 项目数据
-        server_name: 服务器名称
+        project: Project data
+        server_name: Server name
 
     Returns:
-        格式化后的项目信息
+        Formatted project info
     """
     project_type = project.get("project_type", "Unknown")
 
-    # 判断运行status
-    # Java: pid_info存在且pid > 0, starting=True表示启动中
-    # Node/Go/NET: load_info存在且有pid, run=True
-    # Python: run=True, pids非空
-    # Other: run=True, load_info非空
+    # Determine running status
+    # Java: pid_info exists and pid > 0, starting=True means starting up
+    # Node/Go/NET: load_info exists with pid, run=True
+    # Python: run=True, pids not empty
+    # Other: run=True, load_info not empty
     status = "stopped"
     process_info = None
 
-    # 检查进程info
+    # Check process info
     load_info = project.get("load_info", {})
     pid_info = project.get("pid_info", {})
     pids = project.get("pids", [])
@@ -634,7 +634,7 @@ def parse_project_site(project: dict, server_name: str) -> dict:
         if project.get("run") or load_info:
             status = "running"
             if load_info:
-                # load_info可能有多个进程
+                # load_info may have multiple processes
                 first_pid = list(load_info.values())[0] if load_info else {}
                 process_info = {
                     "pid": first_pid.get("pid"),
@@ -645,14 +645,14 @@ def parse_project_site(project: dict, server_name: str) -> dict:
                     "connects": first_pid.get("connects", 0),
                 }
 
-    # 解析SSL
+    # Parse SSL
     ssl_info = check_ssl_status(project.get("ssl"))
 
-    # 获取域名
+    # Get domains
     project_config = project.get("project_config", {})
     domains = project_config.get("domains", [])
 
-    # 获取端口
+    # Get port
     port = project_config.get("port", "")
 
     return {
@@ -673,22 +673,22 @@ def parse_project_site(project: dict, server_name: str) -> dict:
 
 def parse_proxy_site(proxy: dict, server_name: str) -> dict:
     """
-    解析反代项目数据
+    Parse reverse proxy project data
 
     Args:
-        proxy: 反代项目数据
-        server_name: 服务器名称
+        proxy: Reverse proxy project data
+        server_name: Server name
 
     Returns:
-        格式化后的反代项目信息
+        Formatted reverse proxy project info
     """
-    # 反代项目通过status字段和healthy字段判断status
-    # status: "1" = 运行, "0" = 停止
-    # healthy: 1 = 健康, 0 = 不健康
+    # Reverse proxy project status determined by status field and healthy field
+    # status: "1" = running, "0" = stopped
+    # healthy: 1 = healthy, 0 = unhealthy
     status = "running" if proxy.get("status") == "1" else "stopped"
     healthy = proxy.get("healthy", 1) == 1
 
-    # 解析SSL
+    # Parse SSL
     ssl_info = check_ssl_status(proxy.get("ssl"))
 
     return {
@@ -702,7 +702,7 @@ def parse_proxy_site(proxy: dict, server_name: str) -> dict:
         "waf_enabled": proxy.get("waf", {}).get("status", False),
         "ssl": ssl_info,
         "conf_path": proxy.get("conf_path", ""),
-        "process": None,  # 反代项目无进程info
+        "process": None,  # Reverse proxy projects have no process info
         "addtime": proxy.get("addtime", ""),
         "ps": proxy.get("ps", ""),
     }
@@ -710,20 +710,20 @@ def parse_proxy_site(proxy: dict, server_name: str) -> dict:
 
 def parse_html_site(html: dict, server_name: str) -> dict:
     """
-    解析HTML静态项目数据
+    Parse HTML static project data
 
     Args:
-        html: HTML项目数据
-        server_name: 服务器名称
+        html: HTML project data
+        server_name: Server name
 
     Returns:
-        格式化后的HTML项目信息
+        Formatted HTML project info
     """
-    # HTML静态项目通过status字段判断status
-    # status: "1" = 运行, "0" = 停止
+    # HTML static project status determined by status field
+    # status: "1" = running, "0" = stopped
     status = "running" if html.get("status") == "1" else "stopped"
 
-    # 解析SSL
+    # Parse SSL
     ssl_info = check_ssl_status(html.get("ssl"))
 
     return {
@@ -733,7 +733,7 @@ def parse_html_site(html: dict, server_name: str) -> dict:
         "status": status,
         "path": html.get("path", ""),
         "ssl": ssl_info,
-        "process": None,  # HTML静态项目无进程info
+        "process": None,  # HTML static projects have no process info
         "addtime": html.get("addtime", ""),
         "ps": html.get("ps", ""),
     }
@@ -741,14 +741,14 @@ def parse_html_site(html: dict, server_name: str) -> dict:
 
 def parse_all_sites(sites_data: list, server_name: str) -> dict:
     """
-    解析所有网站/项目数据
+    Parse all site/project data
 
     Args:
-        sites_data: 网站数据列表（来自get_all_sites）
-        server_name: 服务器名称
+        sites_data: Site data list (from get_all_sites)
+        server_name: Server name
 
     Returns:
-        格式化后的网站汇总信息
+        Formatted site summary info
     """
     sites = []
     alerts = []
@@ -769,14 +769,14 @@ def parse_all_sites(sites_data: list, server_name: str) -> dict:
 
         sites.append(parsed)
 
-        # 检查SSL告警
+        # Check SSL alerts
         ssl_info = parsed.get("ssl", {})
         if ssl_info.get("status") == "expired":
             ssl_expired.append(parsed["name"])
             alerts.append({
                 "level": "critical",
                 "type": "ssl",
-                "message": f"网站 {parsed['name']} SSL证书已过期",
+                "message": f"Site {parsed['name']} SSL certificate has expired",
                 "site": parsed["name"],
             })
         elif ssl_info.get("status") == "critical":
@@ -784,7 +784,7 @@ def parse_all_sites(sites_data: list, server_name: str) -> dict:
             alerts.append({
                 "level": "critical",
                 "type": "ssl",
-                "message": f"网站 {parsed['name']} SSL证书将在{ssl_info.get('days_remaining', 0)}天内过期",
+                "message": f"Site {parsed['name']} SSL certificate expires in {ssl_info.get('days_remaining', 0)} days",
                 "site": parsed["name"],
             })
         elif ssl_info.get("status") == "warning":
@@ -792,29 +792,29 @@ def parse_all_sites(sites_data: list, server_name: str) -> dict:
             alerts.append({
                 "level": "warning",
                 "type": "ssl",
-                "message": f"网站 {parsed['name']} SSL证书将在{ssl_info.get('days_remaining', 0)}天内过期",
+                "message": f"Site {parsed['name']} SSL certificate expires in {ssl_info.get('days_remaining', 0)} days",
                 "site": parsed["name"],
             })
 
-        # 检查运行status告警
+        # Check running status alerts
         if parsed["status"] == "stopped":
             alerts.append({
                 "level": "warning",
                 "type": "site",
-                "message": f"网站 {parsed['name']} 已停止",
+                "message": f"Site {parsed['name']} has stopped",
                 "site": parsed["name"],
             })
 
-        # 检查反代项目健康status
+        # Check reverse proxy project health status
         if source == "Proxy" and not parsed.get("healthy", True):
             alerts.append({
                 "level": "warning",
                 "type": "proxy",
-                "message": f"反代项目 {parsed['name']} 后端不健康",
+                "message": f"Reverse proxy project {parsed['name']} backend is unhealthy",
                 "site": parsed["name"],
             })
 
-    # statistics
+    # Statistics
     by_type = {}
     by_status = {"running": 0, "stopped": 0, "starting": 0}
     for site in sites:
@@ -839,37 +839,37 @@ def parse_all_sites(sites_data: list, server_name: str) -> dict:
 
 def print_table(data: list[dict], headers: Optional[list[str]] = None) -> str:
     """
-    生成表格格式的输出
+    Generate table-formatted output
 
     Args:
-        data: 数据列表
-        headers: 表头，为None时从数据中提取
+        data: Data list
+        headers: Column headers, extracted from data if None
 
     Returns:
-        格式化的表格字符串
+        Formatted table string
     """
     if not data:
-        return "无数据"
+        return "No data"
 
     if headers is None:
         headers = list(data[0].keys())
 
-    # 计算列宽
+    # Calculate column widths
     widths = [len(str(h)) for h in headers]
     for row in data:
         for i, h in enumerate(headers):
             value = row.get(h, "")
             widths[i] = max(widths[i], len(str(value)))
 
-    # 构建表格
+    # Build table
     lines = []
 
-    # 表头
+    # Header
     header_line = " | ".join(str(h).ljust(widths[i]) for i, h in enumerate(headers))
     lines.append(header_line)
     lines.append("-+-".join("-" * w for w in widths))
 
-    # 数据行
+    # Data rows
     for row in data:
         line = " | ".join(str(row.get(h, "")).ljust(widths[i]) for i, h in enumerate(headers))
         lines.append(line)
@@ -879,20 +879,20 @@ def print_table(data: list[dict], headers: Optional[list[str]] = None) -> str:
 
 def output_result(data: Any, output_format: str = "json", output_file: Optional[str] = None) -> str:
     """
-    输出结果
+    Output result
 
     Args:
-        data: 要输出的数据
-        output_format: 输出格式 (json/table)
-        output_file: 输出文件路径
+        data: Data to output
+        output_format: Output format (json/table)
+        output_file: Output file path
 
     Returns:
-        格式化后的输出字符串
+        Formatted output string
     """
     import json
 
     if output_format == "json":
-        # 处理dataclass对象
+        # Handle dataclass objects
         if hasattr(data, "__dataclass_fields__"):
             from dataclasses import asdict
 
@@ -915,58 +915,58 @@ def output_result(data: Any, output_format: str = "json", output_file: Optional[
 
 def generate_summary_report(results: dict, report_type: str) -> str:
     """
-    生成摘要报告
+    Generate summary report
 
     Args:
-        results: 巡检结果
-        report_type: 报告类型 (system/security/health)
+        results: Inspection results
+        report_type: Report type (system/security/health)
 
     Returns:
-        格式化的报告字符串
+        Formatted report string
     """
     lines = []
     timestamp = format_timestamp()
 
     if report_type == "system":
         lines.append("=" * 50)
-        lines.append(f"系统资源监控报告 - {timestamp}")
+        lines.append(f"System Resource Monitor Report - {timestamp}")
         lines.append("=" * 50)
 
         for server in results.get("servers", []):
             name = server.get("server", "Unknown")
             if "error" in server:
-                lines.append(f"\n[{name}] 连接失败: {server['error']}")
+                lines.append(f"\n[{name}] Connection failed: {server['error']}")
                 continue
 
-            # 新格式数据
+            # New format data
             cpu = server.get("cpu", {})
             memory = server.get("memory", {})
             disk = server.get("disk", {})
 
             lines.append(f"\n[{name}]")
-            lines.append(f"  系统: {server.get('system', 'Unknown')} ({server.get('hostname', 'Unknown')})")
-            lines.append(f"  运行时间: {server.get('uptime', 'Unknown')}")
-            lines.append(f"  CPU: {cpu.get('usage', 0):.1f}% ({cpu.get('cores', 1)}核 - {cpu.get('model', 'Unknown')})")
-            lines.append(f"  内存: {memory.get('percent', 0):.1f}% ({memory.get('used_mb', 0)}/{memory.get('total_mb', 0)} MB)")
-            lines.append(f"  磁盘: {disk.get('percent', 0):.1f}% ({disk.get('used_human', '0')}/{disk.get('total_human', '0')})")
+            lines.append(f"  System: {server.get('system', 'Unknown')} ({server.get('hostname', 'Unknown')})")
+            lines.append(f"  Uptime: {server.get('uptime', 'Unknown')}")
+            lines.append(f"  CPU: {cpu.get('usage', 0):.1f}% ({cpu.get('cores', 1)} cores - {cpu.get('model', 'Unknown')})")
+            lines.append(f"  Memory: {memory.get('percent', 0):.1f}% ({memory.get('used_mb', 0)}/{memory.get('total_mb', 0)} MB)")
+            lines.append(f"  Disk: {disk.get('percent', 0):.1f}% ({disk.get('used_human', '0')}/{disk.get('total_human', '0')})")
 
-            # 资源statistics
+            # Resource statistics
             resources = server.get("resources", {})
             if resources:
-                lines.append(f"  资源: 网站{resources.get('sites', 0)}个, 数据库{resources.get('databases', 0)}个")
+                lines.append(f"  Resources: {resources.get('sites', 0)} sites, {resources.get('databases', 0)} databases")
 
             alerts = server.get("alerts", [])
             if alerts:
-                lines.append(f"  告警: {len(alerts)}条")
+                lines.append(f"  Alerts: {len(alerts)}")
                 for alert in alerts[:3]:
                     lines.append(f"    - [{alert['level']}] {alert['message']}")
 
         summary = results.get("summary", {})
-        lines.append(f"\n汇总: 正常{summary.get('healthy', 0)}, 警告{summary.get('warning', 0)}, 异常{summary.get('critical', 0)}")
+        lines.append(f"\nSummary: Normal {summary.get('healthy', 0)}, Warning {summary.get('warning', 0)}, Error {summary.get('critical', 0)}")
 
     elif report_type == "security":
         lines.append("=" * 50)
-        lines.append(f"安全巡检报告 - {timestamp}")
+        lines.append(f"Security Inspection Report - {timestamp}")
         lines.append("=" * 50)
 
         for server in results.get("servers", []):
@@ -974,34 +974,34 @@ def generate_summary_report(results: dict, report_type: str) -> str:
             risk = server.get("riskLevel", "unknown")
 
             risk_emoji = {"low": "✅", "medium": "🟡", "high": "🟠", "critical": "🔴"}.get(risk, "❓")
-            lines.append(f"\n[{name}] 风险等级: {risk_emoji} {risk.upper()}")
+            lines.append(f"\n[{name}] Risk Level: {risk_emoji} {risk.upper()}")
 
             if "error" in server:
-                lines.append(f"  检查失败: {server['error']}")
+                lines.append(f"  Check failed: {server['error']}")
                 continue
 
             ssh = server.get("ssh", {})
             if ssh:
-                lines.append(f"  SSH端口: {ssh.get('port', 'N/A')}")
+                lines.append(f"  SSH port: {ssh.get('port', 'N/A')}")
 
             firewall = server.get("firewall", {})
             if firewall:
-                fw_status = "运行中" if firewall.get("status") == "running" else "已停止"
-                lines.append(f"  防火墙: {fw_status}")
+                fw_status = "Running" if firewall.get("status") == "running" else "Stopped"
+                lines.append(f"  Firewall: {fw_status}")
 
             alerts = server.get("alerts", [])
             if alerts:
-                lines.append(f"  告警: {len(alerts)}条")
+                lines.append(f"  Alerts: {len(alerts)}")
 
         summary = results.get("summary", {})
         lines.append(
-            f"\n汇总: 低风险{summary.get('low', 0)}, 中风险{summary.get('medium', 0)}, "
-            f"高风险{summary.get('high', 0)}, 严重{summary.get('critical', 0)}"
+            f"\nSummary: Low risk {summary.get('low', 0)}, Medium risk {summary.get('medium', 0)}, "
+            f"High risk {summary.get('high', 0)}, Critical {summary.get('critical', 0)}"
         )
 
     elif report_type == "health":
         lines.append("=" * 50)
-        lines.append(f"健康检查报告 - {timestamp}")
+        lines.append(f"Health Check Report - {timestamp}")
         lines.append("=" * 50)
 
         for server in results.get("servers", []):
@@ -1009,32 +1009,32 @@ def generate_summary_report(results: dict, report_type: str) -> str:
             status = server.get("overallStatus", "unknown")
 
             status_emoji = {"healthy": "✅", "warning": "🟡", "critical": "🔴"}.get(status, "❓")
-            lines.append(f"\n[{name}] 状态: {status_emoji} {status.upper()}")
+            lines.append(f"\n[{name}] Status: {status_emoji} {status.upper()}")
 
             if "error" in server:
-                lines.append(f"  检查失败: {server['error']}")
+                lines.append(f"  Check failed: {server['error']}")
                 continue
 
             services = server.get("services", {})
             if services:
-                lines.append(f"  服务: {services.get('running', 0)}/{services.get('total', 0)} 运行中")
+                lines.append(f"  Services: {services.get('running', 0)}/{services.get('total', 0)} running")
 
             sites = server.get("sites", {})
             if sites:
-                lines.append(f"  网站: {sites.get('running', 0)}/{sites.get('total', 0)} 运行中")
+                lines.append(f"  Sites: {sites.get('running', 0)}/{sites.get('total', 0)} running")
 
             databases = server.get("databases", {})
             if databases:
-                lines.append(f"  数据库: {databases.get('total', 0)}个")
+                lines.append(f"  Databases: {databases.get('total', 0)}")
 
             alerts = server.get("alerts", [])
             if alerts:
-                lines.append(f"  告警: {len(alerts)}条")
+                lines.append(f"  Alerts: {len(alerts)}")
 
         summary = results.get("summary", {})
         lines.append(
-            f"\n汇总: 健康{summary.get('healthy', 0)}, 警告{summary.get('warning', 0)}, "
-            f"异常{summary.get('critical', 0)}"
+            f"\nSummary: Healthy {summary.get('healthy', 0)}, Warning {summary.get('warning', 0)}, "
+            f"Error {summary.get('critical', 0)}"
         )
 
     lines.append("\n" + "=" * 50)

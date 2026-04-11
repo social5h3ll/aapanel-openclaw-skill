@@ -2,60 +2,60 @@
 # dependencies = []
 # ///
 """
-宝塔面板 API 端点定义
-定义所有宝塔面板 API 接口路径
+aaPanel API Endpoint Definitions
+Defines all aaPanel API interface paths
 """
 
-# 宝塔面板版本要求
+# aaPanel minimum version requirement
 MIN_PANEL_VERSION = "9.0.0"
 
 # API endpoint definitions
-# 格式: 端点path?动作parameter
+# Format: endpoint_path?action_parameter
 API_ENDPOINTS = {
-    # 系统status（综合接口，包含CPU、内存、磁盘、网络、负载等）
-    "SYSTEM_STATUS": "/system?action=GetNetWork",  # 综合监控数据接口
+    # System status (composite interface, includes CPU, memory, disk, network, load, etc.)
+    "SYSTEM_STATUS": "/system?action=GetNetWork",  # Composite monitoring data interface
 
-    # 日志相关
+    # Logs
     "PANEL_LOGS": "/logs?action=GetLogs",
     "ERROR_LOGS": "/site?action=GetErrorLog",
     "SITE_LOGS": "/site?action=GetSiteLogs",
-    "FILE_BODY": "/files?action=GetFileBody",  # 读取filecontent
+    "FILE_BODY": "/files?action=GetFileBody",  # Read file content
 
-    # 安全相关
+    # Security
     "FIREWALL_STATUS": "/safe?action=GetFirewallStatus",
     "SECURITY_LOGS": "/safe?action=GetLogs",
     "SSH_INFO": "/safe?action=GetSshInfo",
-    "SSH_LOGS": "/mod/ssh/com/get_ssh_list",  # SSH登录日志
+    "SSH_LOGS": "/mod/ssh/com/get_ssh_list",  # SSH login logs
 
-    # 服务管理
+    # Service management
     "SERVICE_LIST": "/system?action=GetServiceList",
     "SERVICE_STATUS": "/system?action=GetServiceStatus",
-    "SOFTWARE_INFO": "/plugin?action=get_soft_find",  # 获取软件info，parameter sName=服务名
-    "SOFTWARE_LIST": "/plugin?action=get_soft_list",  # 获取软件列表
+    "SOFTWARE_INFO": "/plugin?action=get_soft_find",  # Get software info, parameter sName=service name
+    "SOFTWARE_LIST": "/plugin?action=get_soft_list",  # Get software list
 
-    # 网站管理 - PHP项目（传统网站）
-    "SITE_LIST": "/datalist/data/get_data_list",  # requiresparameter table=sites
+    # Website management - PHP projects (traditional sites)
+    "SITE_LIST": "/datalist/data/get_data_list",  # requires parameter table=sites
 
-    # 项目管理 - 不同type的项目有不同端点
+    # Project management - different project types have different endpoints
     "PROJECT_JAVA_LIST": "/mod/java/project/project_list",
     "PROJECT_NODE_LIST": "/project/nodejs/get_project_list",
     "PROJECT_GO_LIST": "/project/go/get_project_list",
     "PROJECT_PYTHON_LIST": "/project/python/GetProjectList",
     "PROJECT_NET_LIST": "/project/net/get_project_list",
-    "PROJECT_PROXY_LIST": "/mod/proxy/com/get_list",  # 反代项目
-    "PROJECT_HTML_LIST": "/project/html/get_project_list",  # HTML静态项目
-    "PROJECT_OTHER_LIST": "/project/other/get_project_list",  # 其他项目
+    "PROJECT_PROXY_LIST": "/mod/proxy/com/get_list",  # Reverse proxy projects
+    "PROJECT_HTML_LIST": "/project/html/get_project_list",  # HTML static projects
+    "PROJECT_OTHER_LIST": "/project/other/get_project_list",  # Other projects
 
-    # 数据库
+    # Database
     "DATABASE_LIST": "/database?action=GetDatabases",
 
-    # SSL证书
+    # SSL certificates
     "SSL_LIST": "/sites?action=GetSsl",
     "SSL_CREATE": "/acme?action=ApplyCert",
     "SSL_RENEW": "/site?action=RenewCert",
     "SSL_REVOKE": "/site?action=CloseSsl",
 
-    # 网站管理
+    # Website management
     "SITE_CREATE": "/site?action=AddSite",
     "SITE_DELETE": "/site?action=DeleteSite",
     "SITE_DOMAIN_ADD": "/site?action=AddDomain",
@@ -68,19 +68,19 @@ API_ENDPOINTS = {
     "FTP_DELETE": "/ftp?action=DeleteUser",
     "FTP_SET_PASSWORD": "/ftp?action=SetPassword",
 
-    # 防火墙
+    # Firewall
     "FIREWALL_LIST": "/firewall?action=GetList",
     "FIREWALL_ACCEPT": "/firewall?action=AddAcceptAddress",
     "FIREWALL_DROP": "/firewall?action=AddDropAddress",
     "FIREWALL_DEL": "/firewall?action=DelAddress",
 
-    # 任务管理
+    # Task management
     "TASK_LIST": "/task?action=GetTaskList",
-    "CRONTAB_LIST": "/crontab?action=GetCrontab",  # 计划任务列表
-    "CRONTAB_LOGS": "/crontab?action=GetLogs",  # 计划任务日志
+    "CRONTAB_LIST": "/crontab?action=GetCrontab",  # Scheduled task list
+    "CRONTAB_LOGS": "/crontab?action=GetLogs",  # Scheduled task logs
 }
 
-# API 端点分组
+# API endpoint groups
 API_GROUPS = {
     "system": ["SYSTEM_STATUS"],
     "logs": ["PANEL_LOGS", "ERROR_LOGS", "SITE_LOGS", "FILE_BODY"],
@@ -94,30 +94,30 @@ API_GROUPS = {
     "task": ["TASK_LIST", "CRONTAB_LIST", "CRONTAB_LOGS"],
 }
 
-# 端点description
+# Endpoint descriptions
 API_DESCRIPTIONS = {
-    "SYSTEM_STATUS": "获取系统综合监控数据（CPU、内存、磁盘、网络、负载等）",
-    "PANEL_LOGS": "获取面板操作日志",
-    "ERROR_LOGS": "获取错误日志",
-    "SITE_LOGS": "获取网站日志",
-    "FILE_BODY": "读取文件内容（用于读取日志文件）",
-    "FIREWALL_STATUS": "获取防火墙状态",
-    "SECURITY_LOGS": "获取安全日志",
-    "SSH_INFO": "获取SSH配置信息",
-    "SSH_LOGS": "获取SSH登录日志",
-    "SERVICE_LIST": "获取服务列表",
-    "SERVICE_STATUS": "获取服务状态",
-    "SOFTWARE_INFO": "获取软件信息（nginx/apache/redis/memcached等）",
-    "SOFTWARE_LIST": "获取软件列表（PHP多版本查询）",
-    "SITE_LIST": "获取PHP网站列表（传统网站）",
-    "PROJECT_JAVA_LIST": "获取Java项目列表",
-    "PROJECT_NODE_LIST": "获取Node.js项目列表",
-    "PROJECT_GO_LIST": "获取Go项目列表",
-    "PROJECT_PYTHON_LIST": "获取Python项目列表",
-    "PROJECT_NET_LIST": "获取.NET项目列表",
-    "PROJECT_PROXY_LIST": "获取反代项目列表",
-    "PROJECT_HTML_LIST": "获取HTML静态项目列表",
-    "PROJECT_OTHER_LIST": "获取其他项目列表",
+    "SYSTEM_STATUS": "Get comprehensive system monitoring data (CPU, memory, disk, network, load, etc.)",
+    "PANEL_LOGS": "Get panel operation logs",
+    "ERROR_LOGS": "Get error logs",
+    "SITE_LOGS": "Get site logs",
+    "FILE_BODY": "Read file content (used for reading log files)",
+    "FIREWALL_STATUS": "Get firewall status",
+    "SECURITY_LOGS": "Get security logs",
+    "SSH_INFO": "Get SSH configuration info",
+    "SSH_LOGS": "Get SSH login logs",
+    "SERVICE_LIST": "Get service list",
+    "SERVICE_STATUS": "Get service status",
+    "SOFTWARE_INFO": "Get software info (nginx/apache/redis/memcached, etc.)",
+    "SOFTWARE_LIST": "Get software list (PHP multi-version query)",
+    "SITE_LIST": "Get PHP site list (traditional sites)",
+    "PROJECT_JAVA_LIST": "Get Java project list",
+    "PROJECT_NODE_LIST": "Get Node.js project list",
+    "PROJECT_GO_LIST": "Get Go project list",
+    "PROJECT_PYTHON_LIST": "Get Python project list",
+    "PROJECT_NET_LIST": "Get .NET project list",
+    "PROJECT_PROXY_LIST": "Get reverse proxy project list",
+    "PROJECT_HTML_LIST": "Get HTML static project list",
+    "PROJECT_OTHER_LIST": "Get other project list",
     "DATABASE_LIST": "Get database list",
     "SSL_LIST": "Get SSL certificate info",
     "SSL_CREATE": "Create Let's Encrypt certificate",
@@ -138,11 +138,10 @@ API_DESCRIPTIONS = {
     "FIREWALL_DEL": "Remove IP from firewall",
     "TASK_LIST": "Get task list",
     "CRONTAB_LIST": "Get scheduled task list",
-    "CRONTAB_LIST": "获取计划任务列表",
-    "CRONTAB_LOGS": "获取计划任务日志",
+    "CRONTAB_LOGS": "Get scheduled task logs",
 }
 
-# 项目type映射
+# Project type mapping
 PROJECT_TYPES = {
     "PHP": "SITE_LIST",
     "Java": "PROJECT_JAVA_LIST",
@@ -155,31 +154,31 @@ PROJECT_TYPES = {
     "Other": "PROJECT_OTHER_LIST",
 }
 
-# 支持查询status的服务列表（通过 SOFTWARE_INFO 接口查询）
+# Services that can be queried for status (via SOFTWARE_INFO interface)
 SOFTWARE_SERVICES = ["nginx", "apache", "mysql", "pure-ftpd", "redis", "memcached"]
 
-# PHP版本列表（服务name格式：php-X.X，如 php-8.2、php-7.4）
-# 注意：PHP 是多版本共存的服务，一台server可能同时安装多个版本
-# 查询时usage get_soft_list 接口，return的 name 字段与服务name完全匹配
+# PHP version list (service name format: php-X.X, e.g., php-8.2, php-7.4)
+# Note: PHP supports multiple versions coexisting, one server may have multiple versions installed
+# Query using get_soft_list interface, the returned name field matches the service name exactly
 PHP_VERSIONS = ["8.5", "8.4", "8.3", "8.2", "8.1", "8.0", "7.4", "7.3", "7.2", "7.1", "7.0", "5.6", "5.5", "5.4", "5.3", "5.2"]
 
-# 服务日志path（通过 FILE_BODY 接口读取）
-# 注意：只有已安装且运行的服务才有日志可读取
+# Service log paths (read via FILE_BODY interface)
+# Note: Only installed and running services have readable logs
 SERVICE_LOG_PATHS = {
     "nginx": "/www/server/nginx/logs/error.log",
     "apache": "/www/wwwlogs/error_log",
     "redis": "/www/server/redis/redis.log",
-    # mysql usage特殊接口，不usagefilepath
-    # memcached 无标准日志file
+    # mysql uses a special interface, not file path
+    # memcached has no standard log file
 }
 
-# MySQL 日志接口
+# MySQL log interfaces
 MYSQL_LOG_APIS = {
-    "error": "/database?action=GetErrorLog",      # MySQL error日志
-    "slow": "/database?action=GetSlowLogs",       # MySQL 慢查询日志
+    "error": "/database?action=GetErrorLog",      # MySQL error logs
+    "slow": "/database?action=GetSlowLogs",       # MySQL slow query logs
 }
 
-# 特殊服务API（requires插件支持的数据库服务）
+# Special service APIs (requires plugin-supported database services)
 SPECIAL_SERVICE_APIS = {
     "pgsql": {
         "status": "/plugin?action=a&name=pgsql_manager&s=get_service",
@@ -195,31 +194,31 @@ SPECIAL_SERVICE_APIS = {
 
 def get_endpoint(name: str) -> str:
     """
-    获取 API 端点路径
+    Get API endpoint path
 
     Args:
-        name: 端点名称
+        name: Endpoint name
 
     Returns:
-        端点路径
+        Endpoint path
 
     Raises:
-        KeyError: 端点不存在
+        KeyError: Endpoint not found
     """
     if name not in API_ENDPOINTS:
-        raise KeyError(f"未找到 API 端点: {name}")
+        raise KeyError(f"API endpoint not found: {name}")
     return API_ENDPOINTS[name]
 
 
 def get_endpoints_by_group(group: str) -> dict:
     """
-    获取分组下的所有端点
+    Get all endpoints in a group
 
     Args:
-        group: 分组名称
+        group: Group name
 
     Returns:
-        端点字典
+        Endpoint dictionary
     """
     if group not in API_GROUPS:
         return {}
@@ -228,22 +227,22 @@ def get_endpoints_by_group(group: str) -> dict:
 
 def list_endpoints() -> dict:
     """
-    列出所有端点
+    List all endpoints
 
     Returns:
-        端点字典
+        Endpoint dictionary
     """
     return API_ENDPOINTS.copy()
 
 
 def get_endpoint_description(name: str) -> str:
     """
-    获取端点说明
+    Get endpoint description
 
     Args:
-        name: 端点名称
+        name: Endpoint name
 
     Returns:
-        端点说明
+        Endpoint description
     """
-    return API_DESCRIPTIONS.get(name, "未知端点")
+    return API_DESCRIPTIONS.get(name, "Unknown endpoint")

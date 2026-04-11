@@ -7,8 +7,8 @@
 # ]
 # ///
 """
-SSH状态检查脚本
-检查SSH服务状态和登录日志
+SSH Status Check Script
+Checks SSH service status and login logs
 """
 
 import argparse
@@ -35,13 +35,13 @@ from bt_common import (
 
 def get_ssh_status(client: BtClient) -> dict:
     """
-    获取SSH服务状态
+    Get SSH service status
 
     Args:
-        client: 宝塔客户端
+        client: aaPanel client
 
     Returns:
-        SSH状态信息
+        SSH status info
     """
     result = {
         "server": client.name,
@@ -56,7 +56,7 @@ def get_ssh_status(client: BtClient) -> dict:
         ssh_info = {
             "port": info.get("port", 22),
             "status": info.get("status", False),
-            "status_text": info.get("status_text", "未知"),
+            "status_text": info.get("status_text", "Unknown"),
             "ping_enabled": info.get("ping", False),
             "firewall_status": info.get("firewall_status", False),
             "fail2ban": {
@@ -68,20 +68,20 @@ def get_ssh_status(client: BtClient) -> dict:
 
         result["ssh"] = ssh_info
 
-        # generate alerts
+        # Generate alerts
         if not ssh_info["status"]:
             result["alerts"].append({
                 "level": "critical",
                 "type": "ssh",
-                "message": "SSH服务已停止",
+                "message": "SSH service has stopped",
             })
 
-        # check non-standard port
+        # Check non-standard port
         if ssh_info["port"] != 22:
             result["alerts"].append({
                 "level": "info",
                 "type": "ssh",
-                "message": f"SSH使用非标准端口: {ssh_info['port']}",
+                "message": f"SSH using non-standard port: {ssh_info['port']}",
             })
 
     except Exception as e:
@@ -89,7 +89,7 @@ def get_ssh_status(client: BtClient) -> dict:
         result["alerts"].append({
             "level": "critical",
             "type": "connection",
-            "message": f"获取SSH状态失败: {e}",
+            "message": f"Failed to get SSH status: {e}",
         })
 
     return result
@@ -98,17 +98,17 @@ def get_ssh_status(client: BtClient) -> dict:
 def get_ssh_logs(client: BtClient, page: int = 1, limit: int = 50,
                  login_filter: str = "ALL", search: str = "") -> dict:
     """
-    获取SSH登录日志
+    Get SSH login logs
 
     Args:
-        client: 宝塔客户端
-        page: 页码
-        limit: 每页数量
-        login_filter: 过滤类型 (ALL/success/failed)
-        search: 搜索关键字
+        client: aaPanel client
+        page: Page number
+        limit: Items per page
+        login_filter: Filter type (ALL/success/failed)
+        search: Search keyword
 
     Returns:
-        SSH登录日志
+        SSH login logs
     """
     result = {
         "server": client.name,
@@ -127,7 +127,7 @@ def get_ssh_logs(client: BtClient, page: int = 1, limit: int = 50,
         response = client.get_ssh_logs(page=page, limit=limit, search=search)
         logs = response.get("data", [])
 
-        # 解析日志
+        # Parse logs
         parsed_logs = []
         for log in logs:
             parsed_log = {
@@ -139,11 +139,11 @@ def get_ssh_logs(client: BtClient, page: int = 1, limit: int = 50,
                 "address": log.get("address", ""),
                 "port": log.get("port", ""),
                 "login_type": log.get("login_type", "password"),
-                "area": log.get("area", {}).get("info", "未知"),
+                "area": log.get("area", {}).get("info", "Unknown"),
                 "deny_status": log.get("deny_status", 0),
             }
 
-            # 应用过滤
+            # Apply filter
             if login_filter != "ALL":
                 if login_filter == "success" and parsed_log["type"] != "success":
                     continue
@@ -152,7 +152,7 @@ def get_ssh_logs(client: BtClient, page: int = 1, limit: int = 50,
 
             parsed_logs.append(parsed_log)
 
-            # statistics
+            # Statistics
             result["summary"]["total"] += 1
             if parsed_log["type"] == "success":
                 result["summary"]["success"] += 1
@@ -163,13 +163,13 @@ def get_ssh_logs(client: BtClient, page: int = 1, limit: int = 50,
         result["logs"] = parsed_logs
         result["summary"]["unique_ips"] = len(result["summary"]["unique_ips"])
 
-        # generate alerts - 检测异常登录
+        # Generate alerts - detect abnormal logins
         recent_failed = sum(1 for log in parsed_logs[:10] if log["type"] == "failed")
         if recent_failed >= 5:
             result["alerts"].append({
                 "level": "warning",
                 "type": "ssh",
-                "message": f"最近10条日志中有{recent_failed}次登录失败",
+                "message": f"{recent_failed} failed login attempts in last 10 logs",
             })
 
     except Exception as e:
@@ -177,7 +177,7 @@ def get_ssh_logs(client: BtClient, page: int = 1, limit: int = 50,
         result["alerts"].append({
             "level": "critical",
             "type": "connection",
-            "message": f"获取SSH日志失败: {e}",
+            "message": f"Failed to get SSH logs: {e}",
         })
 
     return result
@@ -186,17 +186,17 @@ def get_ssh_logs(client: BtClient, page: int = 1, limit: int = 50,
 def run_ssh_check(manager: BtClientManager, server: Optional[str] = None,
                   check_type: str = "status") -> dict:
     """
-    执行SSH检查
+    Execute SSH check
 
     Args:
-        manager: 客户端管理器
-        server: 指定服务器名称
-        check_type: 检查类型 (status/logs)
+        manager: Client manager
+        server: Specify server name
+        check_type: Check type (status/logs)
 
     Returns:
-        检查结果
+        Check results
     """
-    # 单个server
+    # Single server
     if server:
         client = manager.get_client(server)
         if check_type == "status":
@@ -204,7 +204,7 @@ def run_ssh_check(manager: BtClientManager, server: Optional[str] = None,
         else:
             return get_ssh_logs(client)
 
-    # 所有server
+    # All servers
     all_clients = manager.get_all_clients()
     results = {
         "timestamp": datetime.now().isoformat(),
@@ -229,7 +229,7 @@ def run_ssh_check(manager: BtClientManager, server: Optional[str] = None,
 
 
 def print_ssh_status(results: dict):
-    """打印SSHstatus输出"""
+    """Print SSH status output"""
     try:
         from rich.console import Console
         from rich.table import Table
@@ -238,10 +238,10 @@ def print_ssh_status(results: dict):
         console = Console()
 
         if "servers" in results:
-            # 多server模式
+            # Multi-server mode
             for server_data in results["servers"]:
                 if "error" in server_data:
-                    console.print(f"[red]服务器 {server_data.get('server', 'Unknown')} 错误: {server_data['error']}[/red]")
+                    console.print(f"[red]Server {server_data.get('server', 'Unknown')} error: {server_data['error']}[/red]")
                     continue
 
                 server_name = server_data.get("server", "Unknown")
@@ -249,29 +249,29 @@ def print_ssh_status(results: dict):
 
                 console.print(f"\n[bold cyan]═══ {server_name} ═══[/bold cyan]")
 
-                # SSHstatus表格
+                # SSH status table
                 table = Table(show_header=True, header_style="bold")
-                table.add_column("项目", style="cyan", width=20)
-                table.add_column("值", width=30)
+                table.add_column("Item", style="cyan", width=20)
+                table.add_column("Value", width=30)
 
-                status_str = "[green]运行中[/green]" if ssh_info.get("status") else "[red]已停止[/red]"
-                table.add_row("SSH服务", status_str)
-                table.add_row("端口", str(ssh_info.get("port", 22)))
-                table.add_row("Ping", "允许" if ssh_info.get("ping_enabled") else "禁止")
-                table.add_row("防火墙", "开启" if ssh_info.get("firewall_status") else "关闭")
+                status_str = "[green]Running[/green]" if ssh_info.get("status") else "[red]Stopped[/red]"
+                table.add_row("SSH Service", status_str)
+                table.add_row("Port", str(ssh_info.get("port", 22)))
+                table.add_row("Ping", "Allowed" if ssh_info.get("ping_enabled") else "Denied")
+                table.add_row("Firewall", "On" if ssh_info.get("firewall_status") else "Off")
 
                 fail2ban = ssh_info.get("fail2ban", {})
-                fb_status = "已安装" if fail2ban.get("installed") else "未安装"
+                fb_status = "Installed" if fail2ban.get("installed") else "Not installed"
                 if fail2ban.get("status"):
-                    fb_status += " [green](运行中)[/green]"
+                    fb_status += " [green](Running)[/green]"
                 table.add_row("Fail2ban", fb_status)
 
                 console.print(table)
 
-                # 告警
+                # Alerts
                 alerts = server_data.get("alerts", [])
                 if alerts:
-                    console.print("\n[yellow]提示:[/yellow]")
+                    console.print("\n[yellow]Hints:[/yellow]")
                     for alert in alerts:
                         level = alert.get("level", "info")
                         if level == "critical":
@@ -283,35 +283,35 @@ def print_ssh_status(results: dict):
                         console.print(f"  [{color}]• {alert.get('message', '')}[/{color}]")
 
         else:
-            # 单server模式
+            # Single server mode
             server_name = results.get("server", "Unknown")
             ssh_info = results.get("ssh", {})
 
-            console.print(Panel(f"[bold]{server_name} - SSH状态[/bold]", title="服务器"))
+            console.print(Panel(f"[bold]{server_name} - SSH Status[/bold]", title="Server"))
 
             table = Table(show_header=True, header_style="bold")
-            table.add_column("项目", style="cyan")
-            table.add_column("值")
+            table.add_column("Item", style="cyan")
+            table.add_column("Value")
 
-            status_str = "[green]运行中[/green]" if ssh_info.get("status") else "[red]已停止[/red]"
-            table.add_row("SSH服务", status_str)
-            table.add_row("端口", str(ssh_info.get("port", 22)))
-            table.add_row("状态描述", ssh_info.get("status_text", "未知"))
-            table.add_row("Ping", "允许" if ssh_info.get("ping_enabled") else "禁止")
-            table.add_row("防火墙", "开启" if ssh_info.get("firewall_status") else "关闭")
+            status_str = "[green]Running[/green]" if ssh_info.get("status") else "[red]Stopped[/red]"
+            table.add_row("SSH Service", status_str)
+            table.add_row("Port", str(ssh_info.get("port", 22)))
+            table.add_row("Status Description", ssh_info.get("status_text", "Unknown"))
+            table.add_row("Ping", "Allowed" if ssh_info.get("ping_enabled") else "Denied")
+            table.add_row("Firewall", "On" if ssh_info.get("firewall_status") else "Off")
 
             fail2ban = ssh_info.get("fail2ban", {})
-            fb_status = "已安装" if fail2ban.get("installed") else "未安装"
+            fb_status = "Installed" if fail2ban.get("installed") else "Not installed"
             if fail2ban.get("status"):
-                fb_status += " (运行中)"
+                fb_status += " (Running)"
             table.add_row("Fail2ban", fb_status)
 
             console.print(table)
 
-            # 告警
+            # Alerts
             alerts = results.get("alerts", [])
             if alerts:
-                console.print(f"\n[bold yellow]告警 ({len(alerts)}条):[/bold yellow]")
+                console.print(f"\n[bold yellow]Alerts ({len(alerts)}):[/bold yellow]")
                 for alert in alerts:
                     level = alert.get("level", "info")
                     if level == "critical":
@@ -323,12 +323,12 @@ def print_ssh_status(results: dict):
                     console.print(f"  [{color}]• {alert.get('message', '')}[/{color}]")
 
     except ImportError:
-        print("请安装rich库以使用表格输出: pip install rich")
+        print("Please install rich library for table output: pip install rich")
         print(json.dumps(results, ensure_ascii=False, indent=2, default=str))
 
 
 def print_ssh_logs(results: dict):
-    """打印SSH日志输出"""
+    """Print SSH logs output"""
     try:
         from rich.console import Console
         from rich.table import Table
@@ -337,10 +337,10 @@ def print_ssh_logs(results: dict):
         console = Console()
 
         if "servers" in results:
-            # 多server模式
+            # Multi-server mode
             for server_data in results["servers"]:
                 if "error" in server_data:
-                    console.print(f"[red]服务器 {server_data.get('server', 'Unknown')} 错误: {server_data['error']}[/red]")
+                    console.print(f"[red]Server {server_data.get('server', 'Unknown')} error: {server_data['error']}[/red]")
                     continue
 
                 server_name = server_data.get("server", "Unknown")
@@ -349,161 +349,161 @@ def print_ssh_logs(results: dict):
 
                 console.print(f"\n[bold cyan]═══ {server_name} ═══[/bold cyan]")
 
-                # 汇总
-                console.print(f"[dim]总计: {summary.get('total', 0)} 条, "
-                             f"[green]成功: {summary.get('success', 0)}[/green], "
-                             f"[red]失败: {summary.get('failed', 0)}[/red], "
-                             f"独立IP: {summary.get('unique_ips', 0)}[/dim]")
+                # Summary
+                console.print(f"[dim]Total: {summary.get('total', 0)}, "
+                             f"[green]Success: {summary.get('success', 0)}[/green], "
+                             f"[red]Failed: {summary.get('failed', 0)}[/red], "
+                             f"Unique IPs: {summary.get('unique_ips', 0)}[/dim]")
 
                 if logs:
                     table = Table(show_header=True, header_style="bold")
-                    table.add_column("时间", width=20)
-                    table.add_column("类型", width=8)
-                    table.add_column("用户", width=10)
-                    table.add_column("IP地址", width=18)
-                    table.add_column("地区", width=15)
+                    table.add_column("Time", width=20)
+                    table.add_column("Type", width=8)
+                    table.add_column("User", width=10)
+                    table.add_column("IP Address", width=18)
+                    table.add_column("Region", width=15)
 
                     for log in logs[:30]:
-                        type_str = "[green]成功[/green]" if log["type"] == "success" else "[red]失败[/red]"
+                        type_str = "[green]Success[/green]" if log["type"] == "success" else "[red]Failed[/red]"
                         table.add_row(
                             log.get("time", "")[:19],
                             type_str,
                             log.get("user", "-"),
                             log.get("address", "-"),
-                            log.get("area", "未知")[:15],
+                            log.get("area", "Unknown")[:15],
                         )
 
                     console.print(table)
                 else:
-                    console.print("[yellow]无登录日志[/yellow]")
+                    console.print("[yellow]No login logs[/yellow]")
 
-                # 告警
+                # Alerts
                 alerts = server_data.get("alerts", [])
                 if alerts:
-                    console.print("\n[yellow]告警:[/yellow]")
+                    console.print("\n[yellow]Alerts:[/yellow]")
                     for alert in alerts:
                         level = alert.get("level", "warning")
                         color = "red" if level == "critical" else "yellow"
                         console.print(f"  [{color}]• {alert.get('message', '')}[/{color}]")
 
         else:
-            # 单server模式
+            # Single server mode
             server_name = results.get("server", "Unknown")
             logs = results.get("logs", [])
             summary = results.get("summary", {})
 
-            console.print(Panel(f"[bold]{server_name} - SSH登录日志[/bold]", title="服务器"))
+            console.print(Panel(f"[bold]{server_name} - SSH Login Logs[/bold]", title="Server"))
 
-            # 汇总
-            console.print(f"[dim]总计: {summary.get('total', 0)} 条, "
-                         f"[green]成功: {summary.get('success', 0)}[/green], "
-                         f"[red]失败: {summary.get('failed', 0)}[/red], "
-                         f"独立IP: {summary.get('unique_ips', 0)}[/dim]")
+            # Summary
+            console.print(f"[dim]Total: {summary.get('total', 0)}, "
+                         f"[green]Success: {summary.get('success', 0)}[/green], "
+                         f"[red]Failed: {summary.get('failed', 0)}[/red], "
+                         f"Unique IPs: {summary.get('unique_ips', 0)}[/dim]")
 
             if logs:
                 table = Table(show_header=True, header_style="bold")
-                table.add_column("时间")
-                table.add_column("类型")
-                table.add_column("用户")
-                table.add_column("IP地址")
-                table.add_column("端口")
-                table.add_column("地区")
+                table.add_column("Time")
+                table.add_column("Type")
+                table.add_column("User")
+                table.add_column("IP Address")
+                table.add_column("Port")
+                table.add_column("Region")
 
                 for log in logs[:50]:
-                    type_str = "[green]成功[/green]" if log["type"] == "success" else "[red]失败[/red]"
+                    type_str = "[green]Success[/green]" if log["type"] == "success" else "[red]Failed[/red]"
                     table.add_row(
                         log.get("time", "")[:19],
                         type_str,
                         log.get("user", "-"),
                         log.get("address", "-"),
                         log.get("port", "-"),
-                        log.get("area", "未知"),
+                        log.get("area", "Unknown"),
                     )
 
                 console.print(table)
             else:
-                console.print("[yellow]无登录日志[/yellow]")
+                console.print("[yellow]No login logs[/yellow]")
 
-            # 告警
+            # Alerts
             alerts = results.get("alerts", [])
             if alerts:
-                console.print(f"\n[bold yellow]告警 ({len(alerts)}条):[/bold yellow]")
+                console.print(f"\n[bold yellow]Alerts ({len(alerts)}):[/bold yellow]")
                 for alert in alerts:
                     level = alert.get("level", "warning")
                     color = "red" if level == "critical" else "yellow"
                     console.print(f"  [{color}]• {alert.get('message', '')}[/{color}]")
 
     except ImportError:
-        print("请安装rich库以使用表格输出: pip install rich")
+        print("Please install rich library for table output: pip install rich")
         print(json.dumps(results, ensure_ascii=False, indent=2, default=str))
 
 
 def main():
-    """主函数"""
+    """Main function"""
     parser = argparse.ArgumentParser(
-        description="宝塔面板SSH状态和日志检查",
+        description="aaPanel SSH Status and Log Check",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-示例:
-  # 查看SSH服务status
+Examples:
+  # View SSH service status
   %(prog)s --status
 
-  # 查看SSH登录日志
+  # View SSH login logs
   %(prog)s --logs
 
-  # 只查看failed的登录日志
+  # Only view failed login logs
   %(prog)s --logs --filter failed
 
-  # 只查看success的登录日志
+  # Only view successful login logs
   %(prog)s --logs --filter success
 
-  # 搜索特定IP的登录记录
+  # Search for specific IP login records
   %(prog)s --logs --search 192.168.1.1
 
-  # 指定server
+  # Specify server
   %(prog)s --status --server prod-01
 
-  # JSON格式输出
+  # JSON format output
   %(prog)s --logs --format json
         """,
     )
-    parser.add_argument("--server", "-s", help="指定服务器名称")
-    parser.add_argument("--status", action="store_true", help="查看SSH服务状态")
-    parser.add_argument("--logs", action="store_true", help="查看SSH登录日志")
+    parser.add_argument("--server", "-s", help="Specify server name")
+    parser.add_argument("--status", action="store_true", help="View SSH service status")
+    parser.add_argument("--logs", action="store_true", help="View SSH login logs")
     parser.add_argument("--filter", choices=["ALL", "success", "failed"], default="ALL",
-                        help="日志过滤: ALL(全部), success(成功), failed(失败)")
-    parser.add_argument("--search", help="搜索关键字（IP地址或用户名）")
+                        help="Log filter: ALL (all), success (success), failed (failed)")
+    parser.add_argument("--search", help="Search keyword (IP address or username)")
     parser.add_argument("--limit", "-n", type=int, default=50,
-                        help="返回日志条数 (默认: 50)")
+                        help="Number of logs to return (default: 50)")
     parser.add_argument("--format", "-f", choices=["json", "table"], default="table",
-                        help="输出格式")
-    parser.add_argument("--output", "-o", help="输出文件路径")
-    parser.add_argument("--config", "-c", help="配置文件路径")
+                        help="Output format")
+    parser.add_argument("--output", "-o", help="Output file path")
+    parser.add_argument("--config", "-c", help="Config file path")
 
     args = parser.parse_args()
 
-    # default显示status
+    # Default to show status
     if not args.status and not args.logs:
         args.status = True
 
-    # 初始化client manager
+    # Initialize client manager
     manager = BtClientManager()
 
     try:
         manager.load_config(args.config)
     except FileNotFoundError as e:
-        print(f"错误: {e}", file=sys.stderr)
-        print("请先配置服务器: bt-config.py add", file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
+        print("Please configure server first: bt-config.py add", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"加载配置失败: {e}", file=sys.stderr)
+        print(f"Failed to load config: {e}", file=sys.stderr)
         sys.exit(1)
 
     if not manager.get_all_clients():
-        print("错误: 没有配置任何服务器", file=sys.stderr)
+        print("Error: No servers configured", file=sys.stderr)
         sys.exit(1)
 
-    # 执行检查
+    # Execute check
     try:
         if args.status:
             results = run_ssh_check(manager, args.server, "status")
@@ -512,7 +512,7 @@ def main():
                 if args.output:
                     with open(args.output, "w", encoding="utf-8") as f:
                         f.write(output)
-                    print(f"结果已保存到: {args.output}")
+                    print(f"Result saved to: {args.output}")
                 else:
                     print(output)
             else:
@@ -520,7 +520,7 @@ def main():
 
         if args.logs:
             results = run_ssh_check(manager, args.server, "logs")
-            # 应用过滤
+            # Apply filter
             if args.filter != "ALL" or args.search:
                 if "servers" in results:
                     for server_data in results["servers"]:
@@ -537,7 +537,7 @@ def main():
                                         continue
                                 filtered_logs.append(log)
                             server_data["logs"] = filtered_logs
-                            # 更新statistics
+                            # Update statistics
                             server_data["summary"]["total"] = len(filtered_logs)
                             server_data["summary"]["success"] = sum(1 for l in filtered_logs if l["type"] == "success")
                             server_data["summary"]["failed"] = sum(1 for l in filtered_logs if l["type"] == "failed")
@@ -565,17 +565,17 @@ def main():
                 if args.output:
                     with open(args.output, "w", encoding="utf-8") as f:
                         f.write(output)
-                    print(f"结果已保存到: {args.output}")
+                    print(f"Result saved to: {args.output}")
                 else:
                     print(output)
             else:
                 print_ssh_logs(results)
 
     except KeyError as e:
-        print(f"错误: 未找到服务器 {e}", file=sys.stderr)
+        print(f"Error: Server not found {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"检查失败: {e}", file=sys.stderr)
+        print(f"Check failed: {e}", file=sys.stderr)
         sys.exit(1)
 
 

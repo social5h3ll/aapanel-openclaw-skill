@@ -4,8 +4,8 @@
 # ]
 # ///
 """
-配置管理模块
-从环境变量或YAML文件加载配置，支持全局配置和本地配置
+Configuration Management Module
+Loads configuration from environment variables or YAML files, supports global and local configs
 """
 
 import os
@@ -21,14 +21,14 @@ import yaml
 # aaPanel minimum version requirement
 MIN_PANEL_VERSION = "9.0.0"
 
-# 全局Config filepath
+# Global config file path
 GLOBAL_CONFIG_DIR = Path.home() / ".openclaw"
 GLOBAL_CONFIG_FILE = GLOBAL_CONFIG_DIR / "bt-skills.yaml"
 
 
 @dataclass
 class ThresholdConfig:
-    """alert threshold config"""
+    """Alert threshold config"""
 
     cpu: int = 80
     memory: int = 85
@@ -37,7 +37,7 @@ class ThresholdConfig:
 
 @dataclass
 class GlobalConfig:
-    """global config"""
+    """Global config"""
 
     retry_count: int = 3
     retry_delay: int = 1000
@@ -47,7 +47,7 @@ class GlobalConfig:
 
 @dataclass
 class ServerConfig:
-    """server config"""
+    """Server config"""
 
     name: str
     host: str
@@ -59,14 +59,14 @@ class ServerConfig:
 
 @dataclass
 class Config:
-    """full config"""
+    """Full config"""
 
     servers: list[ServerConfig] = field(default_factory=list)
     global_config: GlobalConfig = field(default_factory=GlobalConfig)
 
     @classmethod
     def from_dict(cls, data: dict) -> "Config":
-        """create config from dict"""
+        """Create config from dict"""
         servers = []
         for s in data.get("servers", []):
             servers.append(
@@ -76,7 +76,7 @@ class Config:
                     token=s["token"],
                     timeout=s.get("timeout", 10000),
                     enabled=s.get("enabled", True),
-                    verify_ssl=s.get("verify_ssl", True),  # 加载 SSL 验证配置
+                    verify_ssl=s.get("verify_ssl", True),  # Load SSL verification config
                 )
             )
 
@@ -99,20 +99,20 @@ class Config:
 
 def get_global_config_path() -> Path:
     """
-    获取全局配置文件路径
+    Get global config file path
 
     Returns:
-        全局配置文件路径
+        Global config file path
     """
     return GLOBAL_CONFIG_FILE
 
 
 def ensure_global_config_dir() -> Path:
     """
-    确保全局配置目录存在
+    Ensure global config directory exists
 
     Returns:
-        全局配置目录路径
+        Global config directory path
     """
     GLOBAL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     return GLOBAL_CONFIG_DIR
@@ -120,41 +120,41 @@ def ensure_global_config_dir() -> Path:
 
 def create_default_global_config() -> Path:
     """
-    创建默认的全局配置文件
+    Create default global config file
 
     Returns:
-        创建的配置文件路径
+        Created config file path
     """
     ensure_global_config_dir()
 
-    default_config = f"""# 宝塔面板日志巡检技能包配置
-# Config filepath: {GLOBAL_CONFIG_FILE}
+    default_config = f"""# aaPanel Log Inspection Skill Package Config
+# Config file path: {GLOBAL_CONFIG_FILE}
 #
-# 此Config file可被 AI 工具读取和修改
-# 宝塔面板版本要求: >= {MIN_PANEL_VERSION}
+# This config file can be read and modified by AI tools
+# aaPanel version requirement: >= {MIN_PANEL_VERSION}
 
 servers:
-  # server configexample
+  # Server config example
   # - name: "prod-01"
   #   host: "https://your-panel.com:8888"
   #   token: "YOUR_API_TOKEN"
   #   timeout: 10000
   #   enabled: true
-  #   verify_ssl: true  # 是否验证 SSL 证书，default为 true
-  #                     # 如果面板usage自签名证书，设置为 false
+  #   verify_ssl: true  # Whether to verify SSL certificate, default is true
+  #                     # Set to false if panel uses self-signed certificate
 
 global:
-  # request重试次数
+  # Request retry count
   retryCount: 3
-  # 重试间隔（毫秒）
+  # Retry delay (milliseconds)
   retryDelay: 1000
-  # 并发request数限制
+  # Concurrent request limit
   concurrency: 3
-  # alert threshold config
+  # Alert threshold config
   thresholds:
-    cpu: 80        # CPUusage率告警阈value(%)
-    memory: 85     # 内存usage率告警阈value(%)
-    disk: 90       # 磁盘usage率告警阈value(%)
+    cpu: 80        # CPU usage rate alert threshold (%)
+    memory: 85     # Memory usage rate alert threshold (%)
+    disk: 90       # Disk usage rate alert threshold (%)
 """
 
     if not GLOBAL_CONFIG_FILE.exists():
@@ -165,29 +165,29 @@ global:
 
 def find_config_file() -> Optional[str]:
     """
-    查找配置文件
+    Find config file
 
-    按以下顺序查找:
-    1. BT_CONFIG_PATH 环境变量
-    2. 全局配置文件 ~/.openclaw/bt-skills.yaml
-    3. 当前目录下的 config/servers.local.yaml
-    4. 当前目录下的 config/servers.yaml
+    Search order:
+    1. BT_CONFIG_PATH environment variable
+    2. Global config file ~/.openclaw/bt-skills.yaml
+    3. config/servers.local.yaml in current directory
+    4. config/servers.yaml in current directory
     """
-    # 1. 环境变量
+    # 1. Environment variable
     env_path = os.environ.get("BT_CONFIG_PATH")
     if env_path and Path(env_path).exists():
         return env_path
 
-    # 2. 全局Config file
+    # 2. Global config file
     if GLOBAL_CONFIG_FILE.exists():
         return str(GLOBAL_CONFIG_FILE)
 
-    # 3. 本地配置
+    # 3. Local config
     local_path = Path("config/servers.local.yaml")
     if local_path.exists():
         return str(local_path)
 
-    # 4. default配置
+    # 4. Default config
     default_path = Path("config/servers.yaml")
     if default_path.exists():
         return str(default_path)
@@ -197,23 +197,23 @@ def find_config_file() -> Optional[str]:
 
 def load_config(config_path: Optional[str] = None) -> dict[str, Any]:
     """
-    加载配置文件
+    Load config file
 
     Args:
-        config_path: 配置文件路径，为None时自动查找
+        config_path: Config file path, auto-search when None
 
     Returns:
-        配置字典
+        Config dictionary
 
     Raises:
-        FileNotFoundError: 配置文件不存在
-        yaml.YAMLError: YAML解析错误
+        FileNotFoundError: Config file does not exist
+        yaml.YAMLError: YAML parse error
     """
     if config_path is None:
         config_path = find_config_file()
 
     if config_path is None:
-        # 尝试创建defaultglobal config
+        # Try to create default global config
         try:
             config_path = str(create_default_global_config())
         except Exception:
@@ -221,16 +221,16 @@ def load_config(config_path: Optional[str] = None) -> dict[str, Any]:
 
     if config_path is None:
         raise FileNotFoundError(
-            f"未找到配置文件。\n"
-            f"解决方案:\n"
-            f"1. 设置 BT_CONFIG_PATH 环境变量\n"
-            f"2. 创建全局配置文件: {GLOBAL_CONFIG_FILE}\n"
-            f"3. 创建本地配置文件: config/servers.local.yaml"
+            f"Config file not found.\n"
+            f"Solutions:\n"
+            f"1. Set BT_CONFIG_PATH environment variable\n"
+            f"2. Create global config file: {GLOBAL_CONFIG_FILE}\n"
+            f"3. Create local config file: config/servers.local.yaml"
         )
 
     path = Path(config_path)
     if not path.exists():
-        raise FileNotFoundError(f"配置文件不存在: {config_path}")
+        raise FileNotFoundError(f"Config file does not exist: {config_path}")
 
     with open(path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
@@ -240,13 +240,13 @@ def load_config(config_path: Optional[str] = None) -> dict[str, Any]:
 
 def load_config_object(config_path: Optional[str] = None) -> Config:
     """
-    加载配置并返回Config对象
+    Load config and return Config object
 
     Args:
-        config_path: 配置文件路径
+        config_path: Config file path
 
     Returns:
-        Config对象
+        Config object
     """
     data = load_config(config_path)
     return Config.from_dict(data)
@@ -254,13 +254,13 @@ def load_config_object(config_path: Optional[str] = None) -> Config:
 
 def get_servers(config_path: Optional[str] = None) -> list[ServerConfig]:
     """
-    获取服务器列表
+    Get server list
 
     Args:
-        config_path: 配置文件路径
+        config_path: Config file path
 
     Returns:
-        服务器配置列表
+        Server configuration list
     """
     config = load_config_object(config_path)
     return [s for s in config.servers if s.enabled]
@@ -268,13 +268,13 @@ def get_servers(config_path: Optional[str] = None) -> list[ServerConfig]:
 
 def get_thresholds(config_path: Optional[str] = None) -> ThresholdConfig:
     """
-    获取告警阈值配置
+    Get alert threshold config
 
     Args:
-        config_path: 配置文件路径
+        config_path: Config file path
 
     Returns:
-        阈值配置
+        Threshold config
     """
     config = load_config_object(config_path)
     return config.global_config.thresholds
@@ -282,9 +282,9 @@ def get_thresholds(config_path: Optional[str] = None) -> ThresholdConfig:
 
 def normalize_host(host: str) -> str:
     """
-    规范化面板地址
+    Normalize panel address
 
-    处理用户输入的各种格式：
+    Handle various input formats:
     - 192.168.69.154:8888 -> https://192.168.69.154:8888
     - 192.168.69.154:8888/soft/plugin -> https://192.168.69.154:8888
     - panel.example.com:8888 -> https://panel.example.com:8888
@@ -292,23 +292,23 @@ def normalize_host(host: str) -> str:
     - http://panel.example.com:8888 -> http://panel.example.com:8888
 
     Args:
-        host: 用户输入的面板地址
+        host: User input panel address
 
     Returns:
-        规范化后的URL
+        Normalized URL
     """
     host = host.strip()
 
-    # 如果没有 scheme，添加 https://
+    # If no scheme, add https://
     if not host.startswith(("http://", "https://")):
-        # 检查是否以 IP 或域名开头（可能包含端口或path）
+        # Check if starts with IP or domain (may contain port or path)
         host = "https://" + host
 
-    # 解析 URL
+    # Parse URL
     parsed = urlparse(host)
 
-    # 移除path部分，只保留 scheme://netloc
-    # netloc 包含 host:port
+    # Remove path part, keep only scheme://netloc
+    # netloc contains host:port
     normalized = f"{parsed.scheme}://{parsed.netloc}"
 
     return normalized
@@ -316,58 +316,58 @@ def normalize_host(host: str) -> str:
 
 def validate_host(host: str) -> tuple[bool, str]:
     """
-    验证面板地址
+    Validate panel address
 
     Args:
-        host: 面板地址
+        host: Panel address
 
     Returns:
-        (是否有效, 错误信息或规范化后的地址)
+        (is_valid, error message or normalized address)
     """
     try:
         normalized = normalize_host(host)
         parsed = urlparse(normalized)
 
-        # 检查是否有有效的 netloc
+        # Check for valid netloc
         if not parsed.netloc:
-            return False, "无效的面板地址：缺少主机名"
+            return False, "Invalid panel address: missing hostname"
 
-        # 检查端口
+        # Check port
         if ":" in parsed.netloc:
             _, port_str = parsed.netloc.rsplit(":", 1)
             try:
                 port = int(port_str)
                 if port < 1 or port > 65535:
-                    return False, f"无效的端口号：{port}"
+                    return False, f"Invalid port number: {port}"
             except ValueError:
-                return False, f"无效的端口号：{port_str}"
+                return False, f"Invalid port number: {port_str}"
 
         return True, normalized
 
     except Exception as e:
-        return False, f"无效的面板地址：{str(e)}"
+        return False, f"Invalid panel address: {str(e)}"
 
 
 def add_server(name: str, host: str, token: str, timeout: int = 10000, enabled: bool = True, verify_ssl: bool = True, config_path: Optional[str] = None) -> bool:
     """
-    添加服务器配置
+    Add server configuration
 
     Args:
-        name: 服务器名称
-        host: 面板地址（自动规范化）
+        name: Server name
+        host: Panel address (auto-normalized)
         token: API Token
-        timeout: 超时时间
-        enabled: 是否启用
-        verify_ssl: 是否验证 SSL 证书
-        config_path: 配置文件路径
+        timeout: Timeout
+        enabled: Whether enabled
+        verify_ssl: Whether to verify SSL certificate
+        config_path: Config file path
 
     Returns:
-        是否添加成功
+        Whether addition succeeded
 
     Raises:
-        ValueError: 地址格式无效
+        ValueError: Invalid address format
     """
-    # 规范化地址
+    # Normalize address
     is_valid, result = validate_host(host)
     if not is_valid:
         raise ValueError(result)
@@ -376,20 +376,20 @@ def add_server(name: str, host: str, token: str, timeout: int = 10000, enabled: 
     if config_path is None:
         config_path = str(GLOBAL_CONFIG_FILE)
 
-    # 确保directory存在
+    # Ensure directory exists
     ensure_global_config_dir()
 
-    # 加载现有配置
+    # Load existing config
     try:
         config = load_config(config_path)
     except FileNotFoundError:
         config = {"servers": [], "global": {}}
 
-    # 检查是否已存在
+    # Check if already exists
     servers = config.get("servers", [])
     for s in servers:
         if s.get("name") == name:
-            # 更新现有配置
+            # Update existing config
             s["host"] = host
             s["token"] = token
             s["timeout"] = timeout
@@ -397,7 +397,7 @@ def add_server(name: str, host: str, token: str, timeout: int = 10000, enabled: 
             s["verify_ssl"] = verify_ssl
             break
     else:
-        # 添加新配置
+        # Add new config
         servers.append({
             "name": name,
             "host": host,
@@ -409,7 +409,7 @@ def add_server(name: str, host: str, token: str, timeout: int = 10000, enabled: 
 
     config["servers"] = servers
 
-    # 确保有global config
+    # Ensure global config exists
     if "global" not in config:
         config["global"] = {
             "retryCount": 3,
@@ -418,7 +418,7 @@ def add_server(name: str, host: str, token: str, timeout: int = 10000, enabled: 
             "thresholds": {"cpu": 80, "memory": 85, "disk": 90},
         }
 
-    # 保存配置
+    # Save config
     path = Path(config_path)
     with open(path, "w", encoding="utf-8") as f:
         yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
@@ -428,14 +428,14 @@ def add_server(name: str, host: str, token: str, timeout: int = 10000, enabled: 
 
 def remove_server(name: str, config_path: Optional[str] = None) -> bool:
     """
-    移除服务器配置
+    Remove server configuration
 
     Args:
-        name: 服务器名称
-        config_path: 配置文件路径
+        name: Server name
+        config_path: Config file path
 
     Returns:
-        是否移除成功
+        Whether removal succeeded
     """
     if config_path is None:
         config_path = str(GLOBAL_CONFIG_FILE)
@@ -450,9 +450,9 @@ def remove_server(name: str, config_path: Optional[str] = None) -> bool:
     config["servers"] = [s for s in servers if s.get("name") != name]
 
     if len(config["servers"]) == original_count:
-        return False  # 未找到
+        return False  # Not found
 
-    # 保存配置
+    # Save config
     path = Path(config_path)
     with open(path, "w", encoding="utf-8") as f:
         yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
@@ -462,16 +462,16 @@ def remove_server(name: str, config_path: Optional[str] = None) -> bool:
 
 def update_thresholds(cpu: Optional[int] = None, memory: Optional[int] = None, disk: Optional[int] = None, config_path: Optional[str] = None) -> bool:
     """
-    更新告警阈值配置
+    Update alert threshold config
 
     Args:
-        cpu: CPU阈值
-        memory: 内存阈值
-        disk: 磁盘阈值
-        config_path: 配置文件路径
+        cpu: CPU threshold
+        memory: Memory threshold
+        disk: Disk threshold
+        config_path: Config file path
 
     Returns:
-        是否更新成功
+        Whether update succeeded
     """
     if config_path is None:
         config_path = str(GLOBAL_CONFIG_FILE)
@@ -494,7 +494,7 @@ def update_thresholds(cpu: Optional[int] = None, memory: Optional[int] = None, d
     if disk is not None:
         config["global"]["thresholds"]["disk"] = disk
 
-    # 保存配置
+    # Save config
     path = Path(config_path)
     ensure_global_config_dir()
     with open(path, "w", encoding="utf-8") as f:
@@ -505,10 +505,10 @@ def update_thresholds(cpu: Optional[int] = None, memory: Optional[int] = None, d
 
 def get_config_info() -> dict:
     """
-    获取配置信息（供 AI 读取）
+    Get config info (for AI reading)
 
     Returns:
-        配置信息字典
+        Config info dictionary
     """
     config_path = find_config_file()
 

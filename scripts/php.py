@@ -82,9 +82,9 @@ def get_site_php_version(client: BtClient, site_name: str) -> str:
         if site.get("name") == site_name:
             php_version = site.get("php_version", "")
             # Convert display format to version number
-            if php_version in ["静态", "Static", "static"]:
+            if php_version in ["static", "Static", "static"]:
                 return "static"
-            if php_version in ["其它", "Other"]:
+            if php_version in ["other", "Other"]:
                 return "other"
             # Extract version number from strings like "PHP-74" or "74"
             if php_version.startswith("PHP-"):

@@ -3,9 +3,9 @@
 # dependencies = []
 # ///
 """
-跨平台环境检查脚本
-检查 Python 版本和依赖，支持 Windows/Linux/macOS
-输出 JSON 结果供 AI 解析
+Cross-Platform Environment Check Script
+Checks Python version and dependencies, supports Windows/Linux/macOS
+Outputs JSON results for AI parsing
 """
 
 import json
@@ -24,7 +24,7 @@ GLOBAL_CONFIG_PATH = Path.home() / ".openclaw" / "bt-skills.yaml"
 
 
 def get_platform_info() -> dict:
-    """get platform info"""
+    """Get platform info"""
     system = platform.system()
     return {
         "system": system,
@@ -39,7 +39,7 @@ def get_platform_info() -> dict:
 
 
 def check_python_version() -> dict:
-    """check Python version"""
+    """Check Python version"""
     version = sys.version_info
     required_major = 3
     required_minor = 10
@@ -53,14 +53,14 @@ def check_python_version() -> dict:
         "required": f"{required_major}.{required_minor}+",
         "is_valid": is_valid,
         "message": (
-            f"Python 版本 {'符合要求' if is_valid else '不符合要求'}: "
-            f"当前 {version.major}.{version.minor}.{version.micro}, 需要 {required_major}.{required_minor}+"
+            f"Python version {'meets requirements' if is_valid else 'does not meet requirements'}: "
+            f"current {version.major}.{version.minor}.{version.micro}, requires {required_major}.{required_minor}+"
         ),
     }
 
 
 def check_module(module_name: str, import_name: str = None) -> dict:
-    """check individual module"""
+    """Check individual module"""
     import_name = import_name or module_name
     try:
         module = __import__(import_name)
@@ -76,12 +76,12 @@ def check_module(module_name: str, import_name: str = None) -> dict:
             "name": module_name,
             "installed": False,
             "version": None,
-            "message": f"✗ {module_name} 未安装",
+            "message": f"✗ {module_name} not installed",
         }
 
 
 def check_dependencies() -> dict:
-    """检查依赖"""
+    """Check dependencies"""
     required_modules = [
         ("requests", "requests"),
         ("pyyaml", "yaml"),
@@ -113,7 +113,7 @@ def check_dependencies() -> dict:
 
 
 def find_python_executable() -> dict:
-    """查找可用的 Python 可执行file"""
+    """Find available Python executable"""
     candidates = ["python3", "python", "py"]
     found = []
     preferred = None
@@ -140,7 +140,7 @@ def find_python_executable() -> dict:
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
             continue
 
-    # current Python 优先
+    # Current Python takes priority
     current = sys.executable
 
     return {
@@ -151,7 +151,7 @@ def find_python_executable() -> dict:
 
 
 def find_executable_path(cmd: str) -> str:
-    """查找可执行filepath"""
+    """Find executable file path"""
     try:
         result = subprocess.run(
             ["which" if platform.system() != "Windows" else "where", cmd],
@@ -167,7 +167,7 @@ def find_executable_path(cmd: str) -> str:
 
 
 def check_config_file() -> dict:
-    """检查Config file"""
+    """Check config file"""
     project_root = Path(__file__).parent.parent
     config_path = project_root / "config"
 
@@ -181,7 +181,7 @@ def check_config_file() -> dict:
         "env_var_value": os.environ.get("BT_CONFIG_PATH"),
     }
 
-    # 配置就绪：global config存在 或 本地配置存在 或 环境变量设置
+    # Config ready: global config exists or local config exists or env var set
     results["config_ready"] = (
         results["global_config_exists"]
         or results["local_config_exists"]
@@ -189,8 +189,8 @@ def check_config_file() -> dict:
     )
 
     if results["config_ready"]:
-        results["message"] = "配置文件已就绪"
-        # 指出usage的配置path
+        results["message"] = "Config file ready"
+        # Point to active config path
         if results["env_var_set"]:
             results["active_config"] = results["env_var_value"]
         elif results["global_config_exists"]:
@@ -198,14 +198,14 @@ def check_config_file() -> dict:
         else:
             results["active_config"] = str(config_path / "servers.local.yaml")
     else:
-        results["message"] = f"需要创建配置文件: {GLOBAL_CONFIG_PATH} 或 config/servers.local.yaml"
+        results["message"] = f"Need to create config file: {GLOBAL_CONFIG_PATH} or config/servers.local.yaml"
         results["active_config"] = None
 
     return results
 
 
 def check_skills_directory() -> dict:
-    """检查技能directory结构"""
+    """Check skills directory structure"""
     project_root = Path(__file__).parent.parent
     skills_dir = project_root / "skills"
 
@@ -237,7 +237,7 @@ def check_skills_directory() -> dict:
 
 
 def get_install_commands() -> dict:
-    """获取安装命令"""
+    """Get install commands"""
     system = platform.system()
 
     commands = {
@@ -265,7 +265,7 @@ def get_install_commands() -> dict:
 
 
 def run_full_check() -> dict:
-    """运行完整检查"""
+    """Run full check"""
     platform_info = get_platform_info()
     python_check = check_python_version()
     deps_check = check_dependencies()
@@ -274,7 +274,7 @@ def run_full_check() -> dict:
     skills_check = check_skills_directory()
     install_cmds = get_install_commands()
 
-    # 计算总体status
+    # Calculate overall status
     all_passed = (
         python_check["is_valid"]
         and deps_check["required_passed"]
@@ -300,110 +300,110 @@ def run_full_check() -> dict:
 
 
 def generate_summary(python, deps, config, skills, all_passed) -> dict:
-    """生成摘要"""
+    """Generate summary"""
     issues = []
     suggestions = []
 
     if not python["is_valid"]:
-        issues.append(f"Python 版本过低: {python['version']}，需要 {python['required']}")
-        suggestions.append("请升级 Python 到 3.10 或更高版本")
+        issues.append(f"Python version too low: {python['version']}, requires {python['required']}")
+        suggestions.append("Please upgrade Python to 3.10 or higher")
 
     for dep in deps["required"]:
         if not dep["installed"]:
-            issues.append(f"缺少依赖: {dep['name']}")
-            suggestions.append(f"运行: pip install {dep['name']}")
+            issues.append(f"Missing dependency: {dep['name']}")
+            suggestions.append(f"Run: pip install {dep['name']}")
 
     if not config["config_ready"]:
-        issues.append("配置文件未就绪")
-        suggestions.append(f"创建全局配置: {GLOBAL_CONFIG_PATH}")
-        suggestions.append("或创建本地配置: config/servers.local.yaml")
+        issues.append("Config file not ready")
+        suggestions.append(f"Create global config: {GLOBAL_CONFIG_PATH}")
+        suggestions.append("Or create local config: config/servers.local.yaml")
 
     for skill_name, skill_info in skills["skills"].items():
         if not skill_info["exists"]:
-            issues.append(f"缺少技能目录: {skill_name}")
+            issues.append(f"Missing skills directory: {skill_name}")
 
     return {
         "is_ready": all_passed,
         "issues": issues,
         "suggestions": suggestions,
         "min_panel_version": MIN_PANEL_VERSION,
-        "message": "环境检查通过，可以开始使用" if all_passed else "环境存在问题，请根据提示修复",
+        "message": "Environment check passed, ready to use" if all_passed else "Environment has issues, please fix according to hints",
     }
 
 
 def print_human_readable(result: dict):
-    """打印人类可读的输出"""
+    """Print human-readable output"""
     print("=" * 60)
-    print("宝塔面板日志巡检技能包 - 环境检查")
+    print("aaPanel Log Inspection Skills Package - Environment Check")
     print("=" * 60)
     print()
 
-    # 平台info
-    print(f"🖥️  操作系统: {result['platform']['system']} ({result['platform']['machine']})")
+    # Platform info
+    print(f"🖥️  OS: {result['platform']['system']} ({result['platform']['machine']})")
     print(f"🐍 Python: {result['python']['version']}")
-    print(f"   状态: {'✅ ' + result['python']['message'] if result['python']['is_valid'] else '❌ ' + result['python']['message']}")
-    print(f"📋 宝塔面板版本要求: >= {result.get('min_panel_version', MIN_PANEL_VERSION)}")
+    print(f"   Status: {'✅ ' + result['python']['message'] if result['python']['is_valid'] else '❌ ' + result['python']['message']}")
+    print(f"📋 aaPanel version requirement: >= {result.get('min_panel_version', MIN_PANEL_VERSION)}")
     print()
 
-    # 依赖检查
-    print("📦 依赖检查:")
+    # Dependencies check
+    print("📦 Dependencies check:")
     for dep in result["dependencies"]["required"]:
         status = "✅" if dep["installed"] else "❌"
-        print(f"   {status} {dep['name']}: {dep['version'] or '未安装'}")
+        print(f"   {status} {dep['name']}: {dep['version'] or 'Not installed'}")
     print()
 
-    # 配置检查
-    print("⚙️  配置检查:")
-    print(f"   全局配置路径: {result['config']['global_config_path']}")
+    # Config check
+    print("⚙️  Config check:")
+    print(f"   Global config path: {result['config']['global_config_path']}")
     if result["config"]["global_config_exists"]:
-        print("   ✅ 全局配置已存在")
+        print("   ✅ Global config exists")
     elif result["config"]["config_ready"]:
-        print(f"   ✅ 配置文件已就绪: {result['config'].get('active_config', '未知')}")
+        print(f"   ✅ Config file ready: {result['config'].get('active_config', 'Unknown')}")
     else:
-        print("   ❌ 配置文件未就绪")
-        print(f"   提示: {result['config']['message']}")
+        print("   ❌ Config file not ready")
+        print(f"   Hint: {result['config']['message']}")
     print()
 
-    # 技能检查
-    print("📁 技能目录:")
+    # Skills check
+    print("📁 Skills directory:")
     for skill_name, skill_info in result["skills"]["skills"].items():
         status = "✅" if skill_info["exists"] else "❌"
         print(f"   {status} {skill_name}")
     print()
 
-    # 摘要
+    # Summary
     print("=" * 60)
     if result["passed"]:
-        print("✅ 环境检查通过，可以开始使用!")
+        print("✅ Environment check passed, ready to use!")
     else:
-        print("❌ 环境检查未通过，请修复以下问题:")
+        print("❌ Environment check failed, please fix the following issues:")
         for issue in result["summary"]["issues"]:
             print(f"   - {issue}")
         print()
-        print("💡 建议:")
+        print("💡 Suggestions:")
         for suggestion in result["summary"]["suggestions"]:
             print(f"   - {suggestion}")
     print("=" * 60)
 
 
 def main():
-    """主函数"""
+    """Main function"""
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="宝塔面板日志巡检技能包 - 环境检查",
+        description="aaPanel Log Inspection Skills Package - Environment Check",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--format", "-f",
         choices=["json", "text"],
         default="text",
-        help="输出格式 (json/text)",
+        help="Output format (json/text)",
     )
     parser.add_argument(
         "--quiet", "-q",
         action="store_true",
-        help="静默模式，只输出结果状态",
+        help="Quiet mode, only output result status",
     )
 
     args = parser.parse_args()

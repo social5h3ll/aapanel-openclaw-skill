@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # coding: utf-8
 """
-宝塔文件操作 CLI 工具
-提供基本的文件管理命令
+aaPanel File Operations CLI Tool
+Provides basic file management commands
 """
 
 import argparse
@@ -12,11 +12,11 @@ from datetime import datetime
 from pathlib import Path
 
 # Import compatible with dev and release environments
-# release environment：bt_common/ (scripts in scripts/)
-# dev environment：src/bt_common/ (脚本在 src/btpanel_files/scripts/)
+# release environment: bt_common/ (scripts in scripts/)
+# dev environment: src/bt_common/ (scripts in src/btpanel_files/scripts/)
 _skill_root = Path(__file__).parent.parent  # skill package root directory
 
-# 优先尝试release environment（skill package root directory），然后尝试dev environment
+# Prioritize release environment (skill package root), then dev environment
 if (_skill_root / "bt_common").exists():
     sys.path.insert(0, str(_skill_root))
 else:
@@ -26,9 +26,9 @@ from bt_common.utils import format_bytes, format_timestamp
 
 
 def format_size(size: int, is_dir: bool = False) -> str:
-    """格式化filesize显示"""
+    """Format file size display"""
     if is_dir:
-        # directorysize通常是 KB
+        # Directory size is usually in KB
         if size >= 1024 * 1024:
             return f"{size / (1024 * 1024):.1f}GB"
         elif size >= 1024:
@@ -36,7 +36,7 @@ def format_size(size: int, is_dir: bool = False) -> str:
         else:
             return f"{size}KB"
     else:
-        # filesize是字节
+        # File size is in bytes
         if size >= 1024 * 1024 * 1024:
             return f"{size / (1024 * 1024 * 1024):.1f}GB"
         elif size >= 1024 * 1024:
@@ -48,7 +48,7 @@ def format_size(size: int, is_dir: bool = False) -> str:
 
 
 def format_time(timestamp: int) -> str:
-    """格式化time戳"""
+    """Format timestamp"""
     try:
         return datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d %H:%M:%S')
     except:
@@ -56,25 +56,25 @@ def format_time(timestamp: int) -> str:
 
 
 def cmd_ls(args):
-    """列出directorycontent"""
+    """List directory contents"""
     from bt_common.files_client import FilesClient
 
     client = FilesClient(args.server)
     result = client.get_dir(args.path, args.page, args.rows)
 
     if 'error' in result:
-        print(f"错误：{result['error']}")
+        print(f"Error: {result['error']}")
         return 1
 
-    # 打印path
+    # Print path
     print(f"\n📁 {result.get('path', args.path)}\n")
 
-    # 打印directory列表
+    # Print directory list
     dirs = result.get('dir', [])
     files = result.get('files', [])
 
     if dirs:
-        print("  目录:")
+        print("  Directories:")
         for d in dirs:
             name = d.get('nm', 'unknown')
             size = format_size(d.get('sz', 0), is_dir=True)
@@ -84,22 +84,22 @@ def cmd_ls(args):
             print(f"    📁 {name:<30} {size:>8}  {acc:<5}  {user:<10}  {mtime}")
 
     if files:
-        print("\n  文件:")
+        print("\n  Files:")
         for f in files:
             name = f.get('nm', 'unknown')
             size = format_size(f.get('sz', 0), is_dir=False)
             mtime = format_time(f.get('mt', 0))
             acc = f.get('acc', '---')
             user = f.get('user', 'unknown')
-            # 显示备注（如果有）
+            # Show remark if any
             rmk = f.get('rmk', '')
             rmk_str = f"  # {rmk}" if rmk else ""
             print(f"    📄 {name:<30} {size:>8}  {acc:<5}  {user:<10}  {mtime}{rmk_str}")
 
     if not dirs and not files:
-        print("  (空目录)")
+        print("  (Empty directory)")
 
-    # 打印分页info
+    # Print pagination info
     page_info = result.get('page', '')
     if page_info:
         print(f"\n  {page_info}")
@@ -108,53 +108,53 @@ def cmd_ls(args):
 
 
 def cmd_cat(args):
-    """读取filecontent"""
+    """Read file content"""
     from bt_common.files_client import FilesClient
 
     client = FilesClient(args.server)
     result = client.get_file_body(args.path)
 
     if not result.get('status') and not result.get('only_read') == False:
-        print(f"错误：{result.get('msg', '读取失败')}")
+        print(f"Error: {result.get('msg', 'Read failed')}")
         return 1
 
     data = result.get('data', '')
 
     if args.lines:
-        # 只显示最后 N 行
+        # Show only last N lines
         lines = data.split('\n')
         data = '\n'.join(lines[-args.lines:])
 
     print(data)
 
-    # 显示fileinfo
+    # Show file info
     if args.verbose:
-        print(f"\n--- 文件信息 ---", file=sys.stderr)
-        print(f"大小：{format_bytes(result.get('size', 0))}", file=sys.stderr)
-        print(f"编码：{result.get('encoding', 'utf-8')}", file=sys.stderr)
-        print(f"只读：{'是' if result.get('only_read') else '否'}", file=sys.stderr)
+        print(f"\n--- File Info ---", file=sys.stderr)
+        print(f"Size: {format_bytes(result.get('size', 0))}", file=sys.stderr)
+        print(f"Encoding: {result.get('encoding', 'utf-8')}", file=sys.stderr)
+        print(f"Read-only: {'Yes' if result.get('only_read') else 'No'}", file=sys.stderr)
 
     return 0
 
 
 def cmd_edit(args):
-    """编辑filecontent"""
+    """Edit file content"""
     from bt_common.files_client import FilesClient
 
     client = FilesClient(args.server)
 
-    # 如果指定了contentparameter
+    # If content parameter specified
     if args.content:
         content = args.content
     elif args.file:
-        # 从file读取content
+        # Read content from file
         with open(args.file, 'r', encoding='utf-8') as f:
             content = f.read()
     else:
-        # 从标准输入读取
+        # Read from stdin
         content = sys.stdin.read()
 
-    # 获取currentfile的 st_mtime
+    # Get current file's st_mtime
     try:
         file_info = client.get_file_body(args.path)
         st_mtime = file_info.get('st_mtime')
@@ -164,94 +164,94 @@ def cmd_edit(args):
     result = client.save_file_body(args.path, content, args.encoding, st_mtime)
 
     if result.get('status'):
-        print(f"✅ 文件已保存：{args.path}")
+        print(f"✅ File saved: {args.path}")
         return 0
     else:
-        print(f"❌ 保存失败：{result.get('msg', '未知错误')}")
+        print(f"❌ Save failed: {result.get('msg', 'Unknown error')}")
         return 1
 
 
 def cmd_mkdir(args):
-    """创建directory"""
+    """Create directory"""
     from bt_common.files_client import FilesClient
 
     client = FilesClient(args.server)
     result = client.create_dir(args.path)
 
     if result.get('status'):
-        print(f"✅ 目录已创建：{args.path}")
+        print(f"✅ Directory created: {args.path}")
         return 0
     else:
-        print(f"❌ 创建失败：{result.get('msg', '未知错误')}")
+        print(f"❌ Create failed: {result.get('msg', 'Unknown error')}")
         return 1
 
 
 def cmd_touch(args):
-    """创建file"""
+    """Create file"""
     from bt_common.files_client import FilesClient
 
     client = FilesClient(args.server)
     result = client.create_file(args.path)
 
     if result.get('status'):
-        print(f"✅ 文件已创建：{args.path}")
+        print(f"✅ File created: {args.path}")
         return 0
     else:
-        print(f"❌ 创建失败：{result.get('msg', '未知错误')}")
+        print(f"❌ Create failed: {result.get('msg', 'Unknown error')}")
         return 1
 
 
 def cmd_rm(args):
-    """删除file"""
+    """Delete file"""
     from bt_common.files_client import FilesClient
 
     client = FilesClient(args.server)
     result = client.delete_file(args.path)
 
     if result.get('status'):
-        msg = result.get('msg', '已删除')
+        msg = result.get('msg', 'Deleted')
         print(f"✅ {msg}: {args.path}")
         return 0
     else:
-        print(f"❌ 删除失败：{result.get('msg', '未知错误')}")
+        print(f"❌ Delete failed: {result.get('msg', 'Unknown error')}")
         return 1
 
 
 def cmd_rmdir(args):
-    """删除directory"""
+    """Delete directory"""
     from bt_common.files_client import FilesClient
 
     client = FilesClient(args.server)
     result = client.delete_dir(args.path)
 
     if result.get('status'):
-        msg = result.get('msg', '已删除')
+        msg = result.get('msg', 'Deleted')
         print(f"✅ {msg}: {args.path}")
         return 0
     else:
-        print(f"❌ 删除失败：{result.get('msg', '未知错误')}")
+        print(f"❌ Delete failed: {result.get('msg', 'Unknown error')}")
         return 1
 
 
 def cmd_stat(args):
-    """查看filepermissions"""
+    """View file permissions"""
     from bt_common.files_client import FilesClient
 
     client = FilesClient(args.server)
     result = client.get_file_access(args.path)
 
     if 'chmod' in result and 'chown' in result:
-        print(f"文件：{args.path}")
-        print(f"权限：{result['chmod']}")
-        print(f"所有者：{result['chown']}")
+        print(f"File: {args.path}")
+        print(f"Permissions: {result['chmod']}")
+        print(f"Owner: {result['chown']}")
         return 0
     else:
-        print(f"❌ 获取失败：{result.get('msg', '未知错误')}")
+        print(f"❌ Get failed: {result.get('msg', 'Unknown error')}")
         return 1
 
 
 def cmd_chmod(args):
-    """设置filepermissions"""
+    """Set file permissions"""
     from bt_common.files_client import FilesClient
 
     client = FilesClient(args.server)
@@ -264,81 +264,81 @@ def cmd_chmod(args):
     )
 
     if result.get('status'):
-        print(f"✅ 权限已设置：{args.path} -> {args.access}")
+        print(f"✅ Permissions set: {args.path} -> {args.access}")
         return 0
     else:
-        print(f"❌ 设置失败：{result.get('msg', '未知错误')}")
+        print(f"❌ Set failed: {result.get('msg', 'Unknown error')}")
         return 1
 
 
 def main():
-    """主函数"""
+    """Main function"""
     parser = argparse.ArgumentParser(
-        description='宝塔文件操作工具',
+        description='aaPanel File Operations Tool',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     parser.add_argument(
         '-s', '--server',
-        help='服务器名称（使用 bt-config 配置的名称）'
+        help='Server name (name configured with bt-config)'
     )
 
-    subparsers = parser.add_subparsers(dest='command', help='命令')
+    subparsers = parser.add_subparsers(dest='command', help='Commands')
 
-    # ls 命令 - 列出directory
-    ls_parser = subparsers.add_parser('ls', help='列出目录内容')
-    ls_parser.add_argument('path', nargs='?', default='/www', help='目录路径')
-    ls_parser.add_argument('-p', '--page', type=int, default=1, help='页码')
-    ls_parser.add_argument('-r', '--rows', type=int, default=500, help='每页显示数量')
+    # ls command - List directory
+    ls_parser = subparsers.add_parser('ls', help='List directory contents')
+    ls_parser.add_argument('path', nargs='?', default='/www', help='Directory path')
+    ls_parser.add_argument('-p', '--page', type=int, default=1, help='Page number')
+    ls_parser.add_argument('-r', '--rows', type=int, default=500, help='Items per page')
     ls_parser.set_defaults(func=cmd_ls)
 
-    # cat 命令 - 读取file
-    cat_parser = subparsers.add_parser('cat', help='读取文件内容')
-    cat_parser.add_argument('path', help='文件路径')
-    cat_parser.add_argument('-n', '--lines', type=int, help='显示最后 N 行')
-    cat_parser.add_argument('-v', '--verbose', action='store_true', help='显示文件信息')
+    # cat command - Read file
+    cat_parser = subparsers.add_parser('cat', help='Read file content')
+    cat_parser.add_argument('path', help='File path')
+    cat_parser.add_argument('-n', '--lines', type=int, help='Show last N lines')
+    cat_parser.add_argument('-v', '--verbose', action='store_true', help='Show file info')
     cat_parser.set_defaults(func=cmd_cat)
 
-    # edit 命令 - 编辑file
-    edit_parser = subparsers.add_parser('edit', help='编辑文件内容')
-    edit_parser.add_argument('path', help='文件路径')
-    edit_parser.add_argument('content', nargs='?', help='文件内容')
-    edit_parser.add_argument('-f', '--file', help='从文件读取内容')
-    edit_parser.add_argument('-e', '--encoding', default='utf-8', help='文件编码')
+    # edit command - Edit file
+    edit_parser = subparsers.add_parser('edit', help='Edit file content')
+    edit_parser.add_argument('path', help='File path')
+    edit_parser.add_argument('content', nargs='?', help='File content')
+    edit_parser.add_argument('-f', '--file', help='Read content from file')
+    edit_parser.add_argument('-e', '--encoding', default='utf-8', help='File encoding')
     edit_parser.set_defaults(func=cmd_edit)
 
-    # mkdir 命令 - 创建directory
-    mkdir_parser = subparsers.add_parser('mkdir', help='创建目录')
-    mkdir_parser.add_argument('path', help='目录路径')
+    # mkdir command - Create directory
+    mkdir_parser = subparsers.add_parser('mkdir', help='Create directory')
+    mkdir_parser.add_argument('path', help='Directory path')
     mkdir_parser.set_defaults(func=cmd_mkdir)
 
-    # touch 命令 - 创建file
-    touch_parser = subparsers.add_parser('touch', help='创建文件')
-    touch_parser.add_argument('path', help='文件路径')
+    # touch command - Create file
+    touch_parser = subparsers.add_parser('touch', help='Create file')
+    touch_parser.add_argument('path', help='File path')
     touch_parser.set_defaults(func=cmd_touch)
 
-    # rm 命令 - 删除file
-    rm_parser = subparsers.add_parser('rm', help='删除文件')
-    rm_parser.add_argument('path', help='文件路径')
+    # rm command - Delete file
+    rm_parser = subparsers.add_parser('rm', help='Delete file')
+    rm_parser.add_argument('path', help='File path')
     rm_parser.set_defaults(func=cmd_rm)
 
-    # rmdir 命令 - 删除directory
-    rmdir_parser = subparsers.add_parser('rmdir', help='删除目录')
-    rmdir_parser.add_argument('path', help='目录路径')
+    # rmdir command - Delete directory
+    rmdir_parser = subparsers.add_parser('rmdir', help='Delete directory')
+    rmdir_parser.add_argument('path', help='Directory path')
     rmdir_parser.set_defaults(func=cmd_rmdir)
 
-    # stat 命令 - 查看permissions
-    stat_parser = subparsers.add_parser('stat', help='查看文件权限')
-    stat_parser.add_argument('path', help='文件路径')
+    # stat command - View permissions
+    stat_parser = subparsers.add_parser('stat', help='View file permissions')
+    stat_parser.add_argument('path', help='File path')
     stat_parser.set_defaults(func=cmd_stat)
 
-    # chmod 命令 - 设置permissions
-    chmod_parser = subparsers.add_parser('chmod', help='设置文件权限')
-    chmod_parser.add_argument('access', help='权限码（如 755, 644）')
-    chmod_parser.add_argument('path', help='文件路径')
-    chmod_parser.add_argument('-u', '--user', help='所有者用户名', default='www')
-    chmod_parser.add_argument('-g', '--group', help='用户组名', default='www')
-    chmod_parser.add_argument('-R', '--recursive', action='store_true', help='递归设置子目录和文件')
+    # chmod command - Set permissions
+    chmod_parser = subparsers.add_parser('chmod', help='Set file permissions')
+    chmod_parser.add_argument('access', help='Permission code (e.g., 755, 644)')
+    chmod_parser.add_argument('path', help='File path')
+    chmod_parser.add_argument('-u', '--user', help='Owner username', default='www')
+    chmod_parser.add_argument('-g', '--group', help='Group name', default='www')
+    chmod_parser.add_argument('-R', '--recursive', action='store_true', help='Recursively set subdirectories and files')
     chmod_parser.set_defaults(func=cmd_chmod)
 
     args = parser.parse_args()

@@ -7,8 +7,8 @@
 # ]
 # ///
 """
-计划任务检查脚本
-检查宝塔面板的计划任务，重点关注备份任务
+Scheduled Task Check Script
+Checks aaPanel scheduled tasks, focusing on backup tasks
 """
 
 import argparse
@@ -37,63 +37,63 @@ from bt_common import (
 
 # task type mapping
 TASK_TYPE_MAP = {
-    "toShell": "Shell脚本",
-    "site": "备份网站",
-    "database": "备份数据库",
-    "path": "备份目录",
-    "sync_time": "同步时间",
-    "log": "切割日志",
-    "rememory": "释放内存",
-    "access": "访问URL",
-    "backup": "备份",
+    "toShell": "Shell Script",
+    "site": "Backup Site",
+    "database": "Backup Database",
+    "path": "Backup Directory",
+    "sync_time": "Sync Time",
+    "log": "Rotate Log",
+    "rememory": "Free Memory",
+    "access": "Access URL",
+    "backup": "Backup",
 }
 
-# 任务type分类
+# task type classification
 BACKUP_TYPES = ["site", "database", "path"]
 
 
 def parse_crontab_task(task: dict) -> dict:
     """
-    解析计划任务数据
+    Parse scheduled task data
 
     Args:
-        task: 原始任务数据
+        task: Raw task data
 
     Returns:
-        解析后的任务信息
+        Parsed task info
     """
     s_type = task.get("sType", "")
-    task_type = TASK_TYPE_MAP.get(s_type, s_type or "其他")
+    task_type = TASK_TYPE_MAP.get(s_type, s_type or "Other")
 
-    # 判断是否为backup tasks
-    is_backup = s_type in BACKUP_TYPES or "备份" in task.get("name", "")
+    # Check if backup task
+    is_backup = s_type in BACKUP_TYPES or "backup" in task.get("name", "").lower()
 
-    # 解析执行周期
+    # Parse execution cycle
     cycle = task.get("cycle", "") or task.get("type_zh", "")
 
-    # 解析执行time
+    # Parse execution time
     exec_time = ""
     if task.get("type") == "day":
         hour = task.get("where_hour", 0)
         minute = task.get("where_minute", 0)
-        exec_time = f"每天 {hour:02d}:{minute:02d}"
+        exec_time = f"Daily {hour:02d}:{minute:02d}"
     elif task.get("type") == "hour":
         minute = task.get("where_minute", 0)
-        exec_time = f"每小时 {minute:02d}分"
+        exec_time = f"Hourly at minute {minute:02d}"
     elif task.get("type") == "minute-n":
         interval = task.get("where1", "5")
-        exec_time = f"每 {interval} 分钟"
+        exec_time = f"Every {interval} minutes"
     elif task.get("type") == "week":
-        days = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+        days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
         day_idx = int(task.get("where1", 0))
         hour = task.get("where_hour", 0)
         minute = task.get("where_minute", 0)
-        exec_time = f"每{days[day_idx]} {hour:02d}:{minute:02d}"
+        exec_time = f"Every {days[day_idx]} at {hour:02d}:{minute:02d}"
     elif task.get("type") == "month":
         day = task.get("where1", 1)
         hour = task.get("where_hour", 0)
         minute = task.get("where_minute", 0)
-        exec_time = f"每月{day}日 {hour:02d}:{minute:02d}"
+        exec_time = f"Monthly on day {day} at {hour:02d}:{minute:02d}"
 
     return {
         "id": task.get("id"),
@@ -112,21 +112,21 @@ def parse_crontab_task(task: dict) -> dict:
         "user": task.get("user", "root"),
         "addtime": task.get("addtime", ""),
         "type_name": task.get("type_name", ""),
-        "result": task.get("result", 0),  # 0=未执行/failed, 1=success
+        "result": task.get("result", 0),  # 0=not executed/failed, 1=success
     }
 
 
 def get_crontab_status(client: BtClient, page: int = 1, limit: int = 100) -> dict:
     """
-    获取计划任务状态
+    Get scheduled task status
 
     Args:
-        client: 宝塔客户端
-        page: 页码
-        limit: 每页数量
+        client: aaPanel client
+        page: Page number
+        limit: Items per page
 
     Returns:
-        计划任务状态信息
+        Scheduled task status info
     """
     result = {
         "server": client.name,
@@ -152,7 +152,7 @@ def get_crontab_status(client: BtClient, page: int = 1, limit: int = 100) -> dic
             parsed = parse_crontab_task(task)
             result["tasks"].append(parsed)
 
-            # statistics
+            # Statistics
             result["summary"]["total"] += 1
             if parsed["enabled"]:
                 result["summary"]["enabled"] += 1
@@ -161,7 +161,7 @@ def get_crontab_status(client: BtClient, page: int = 1, limit: int = 100) -> dic
                 result["alerts"].append({
                     "level": "warning",
                     "type": "crontab",
-                    "message": f"任务 [{parsed['name']}] 已禁用",
+                    "message": f"Task [{parsed['name']}] is disabled",
                     "task_id": parsed["id"],
                 })
 
@@ -178,7 +178,7 @@ def get_crontab_status(client: BtClient, page: int = 1, limit: int = 100) -> dic
         result["alerts"].append({
             "level": "critical",
             "type": "connection",
-            "message": f"获取计划任务失败: {e}",
+            "message": f"Failed to get scheduled tasks: {e}",
         })
 
     return result
@@ -186,15 +186,15 @@ def get_crontab_status(client: BtClient, page: int = 1, limit: int = 100) -> dic
 
 def get_backup_task_logs(client: BtClient, task_id: int, days: int = 7) -> dict:
     """
-    获取备份任务日志
+    Get backup task logs
 
     Args:
-        client: 宝塔客户端
-        task_id: 任务ID
-        days: 查询天数
+        client: aaPanel client
+        task_id: Task ID
+        days: Query days
 
     Returns:
-        任务日志信息
+        Task log info
     """
     result = {
         "server": client.name,
@@ -206,7 +206,7 @@ def get_backup_task_logs(client: BtClient, task_id: int, days: int = 7) -> dict:
     }
 
     try:
-        # 计算time范围
+        # Calculate time range
         end_timestamp = int(time.time())
         start_timestamp = end_timestamp - (days * 24 * 60 * 60)
 
@@ -220,7 +220,7 @@ def get_backup_task_logs(client: BtClient, task_id: int, days: int = 7) -> dict:
             log_content = response.get("msg", "")
             result["logs"] = parse_backup_log(log_content)
 
-            # 分析最后的执行status
+            # Analyze last execution status
             if result["logs"]:
                 last_log = result["logs"][-1]
                 result["last_status"] = last_log.get("status")
@@ -228,10 +228,10 @@ def get_backup_task_logs(client: BtClient, task_id: int, days: int = 7) -> dict:
                     result["alerts"].append({
                         "level": "warning",
                         "type": "backup",
-                        "message": f"备份任务最后一次执行失败: {last_log.get('message', '')}",
+                        "message": f"Last backup task execution failed: {last_log.get('message', '')}",
                     })
         else:
-            result["error"] = response.get("msg", "获取日志失败")
+            result["error"] = response.get("msg", "Failed to get logs")
 
     except Exception as e:
         result["error"] = str(e)
@@ -241,17 +241,17 @@ def get_backup_task_logs(client: BtClient, task_id: int, days: int = 7) -> dict:
 
 def parse_backup_log(log_content: str) -> list:
     """
-    解析备份日志
+    Parse backup log
 
     Args:
-        log_content: 日志内容
+        log_content: Log content
 
     Returns:
-        解析后的日志列表
+        Parsed log list
     """
     logs = []
 
-    # 按执行块分割
+    # Split by execution blocks
     blocks = re.split(r"={10,}", log_content)
 
     for block in blocks:
@@ -265,26 +265,28 @@ def parse_backup_log(log_content: str) -> list:
             "details": [],
         }
 
-        # 提取time
-        time_match = re.search(r"开始备份\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]", block)
+        # Extract time
+# Pattern to match btpanel backup log start marker (btpanel logs are in Chinese)
+        time_match = re.search(r"backup_start_marker\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]", block)
         if time_match:
             log_entry["time"] = time_match.group(1)
 
-        # 提取status
+        # Extract status
         if "Successful" in block:
             log_entry["status"] = "success"
-        elif "Failed" in block or "失败" in block:
+        elif "Failed" in block:
             log_entry["status"] = "failed"
 
-        # 提取详细info
+        # Extract details
         lines = block.strip().split("\n")
         for line in lines:
             line = line.strip()
             if line.startswith("|-"):
                 log_entry["details"].append(line[2:])
 
-        # 提取备份filepath
-        file_match = re.search(r"网站已备份到：(.+\.tar\.gz)", block)
+        # Extract backup file path
+# Pattern to match btpanel backup path output (btpanel logs are in Chinese)
+        file_match = re.search(r"(?:site backed up to|backup_to_marker)：(.+\.tar\.gz)", block)
         if file_match:
             log_entry["backup_file"] = file_match.group(1)
 
@@ -297,17 +299,17 @@ def parse_backup_log(log_content: str) -> list:
 def run_crontab_check(manager: BtClientManager, server: Optional[str] = None,
                       backup_only: bool = False) -> dict:
     """
-    执行计划任务检查
+    Execute scheduled task check
 
     Args:
-        manager: 客户端管理器
-        server: 指定服务器名称
-        backup_only: 只返回备份任务
+        manager: Client manager
+        server: Specify server name
+        backup_only: Only return backup tasks
 
     Returns:
-        检查结果
+        Check results
     """
-    # 单个server
+    # Single server
     if server:
         client = manager.get_client(server)
         result = get_crontab_status(client)
@@ -315,7 +317,7 @@ def run_crontab_check(manager: BtClientManager, server: Optional[str] = None,
             result["tasks"] = [t for t in result["tasks"] if t["is_backup"]]
         return result
 
-    # 所有server
+    # All servers
     all_clients = manager.get_all_clients()
     results = {
         "timestamp": datetime.now().isoformat(),
@@ -338,7 +340,7 @@ def run_crontab_check(manager: BtClientManager, server: Optional[str] = None,
 
             results["servers"].append(server_result)
 
-            # 汇总
+            # Summary
             summary = server_result.get("summary", {})
             results["summary"]["total_servers"] += 1
             results["summary"]["total_tasks"] += summary.get("total", 0)
@@ -346,7 +348,7 @@ def run_crontab_check(manager: BtClientManager, server: Optional[str] = None,
             results["summary"]["total_enabled"] += summary.get("enabled", 0)
             results["summary"]["total_disabled"] += summary.get("disabled", 0)
 
-            # 收集告警
+            # Collect alerts
             for alert in server_result.get("alerts", []):
                 alert["server"] = name
                 results["alerts"].append(alert)
@@ -362,7 +364,7 @@ def run_crontab_check(manager: BtClientManager, server: Optional[str] = None,
 
 
 def print_crontab_table(results: dict, backup_only: bool = False):
-    """打印表格格式输出"""
+    """Print table-formatted output"""
     try:
         from rich.console import Console
         from rich.table import Table
@@ -371,10 +373,10 @@ def print_crontab_table(results: dict, backup_only: bool = False):
         console = Console()
 
         if "servers" in results and len(results["servers"]) > 1:
-            # 多server模式
+            # Multi-server mode
             for server_data in results["servers"]:
                 if "error" in server_data:
-                    console.print(f"[red]服务器 {server_data.get('server', 'Unknown')} 错误: {server_data['error']}[/red]")
+                    console.print(f"[red]Server {server_data.get('server', 'Unknown')} error: {server_data['error']}[/red]")
                     continue
 
                 server_name = server_data.get("server", "Unknown")
@@ -382,24 +384,24 @@ def print_crontab_table(results: dict, backup_only: bool = False):
 
                 console.print(f"\n[bold cyan]═══ {server_name} ═══[/bold cyan]")
 
-                # 任务列表
+                # Task list
                 tasks = server_data.get("tasks", [])
                 if tasks:
                     table = Table(show_header=True, header_style="bold")
-                    table.add_column("名称", style="cyan", width=30)
-                    table.add_column("类型", width=12)
-                    table.add_column("状态", width=8)
-                    table.add_column("执行时间", width=20)
-                    table.add_column("备份目标", width=15)
+                    table.add_column("Name", style="cyan", width=30)
+                    table.add_column("Type", width=12)
+                    table.add_column("Status", width=8)
+                    table.add_column("Execution Time", width=20)
+                    table.add_column("Backup Target", width=15)
 
                     for task in tasks:
                         # status
                         if task["enabled"]:
-                            status_str = "[green]启用[/green]"
+                            status_str = "[green]Enabled[/green]"
                         else:
-                            status_str = "[red]禁用[/red]"
+                            status_str = "[red]Disabled[/red]"
 
-                        # 备份目标
+                        # Backup target
                         backup_target = task.get("backup_target", "") or ""
 
                         table.add_row(
@@ -412,59 +414,59 @@ def print_crontab_table(results: dict, backup_only: bool = False):
 
                     console.print(table)
                 else:
-                    console.print("[yellow]无计划任务[/yellow]")
+                    console.print("[yellow]No scheduled tasks[/yellow]")
 
-                # 汇总
-                console.print(f"\n[dim]汇总: "
-                             f"总数 {summary.get('total', 0)}, "
-                             f"[green]启用 {summary.get('enabled', 0)}[/green], "
-                             f"[red]禁用 {summary.get('disabled', 0)}[/red], "
-                             f"备份任务 {summary.get('backup_tasks', 0)}[/dim]")
+                # Summary
+                console.print(f"\n[dim]Summary: "
+                             f"Total {summary.get('total', 0)}, "
+                             f"[green]Enabled {summary.get('enabled', 0)}[/green], "
+                             f"[red]Disabled {summary.get('disabled', 0)}[/red], "
+                             f"Backup tasks {summary.get('backup_tasks', 0)}[/dim]")
 
-                # 告警
+                # Alerts
                 alerts = server_data.get("alerts", [])
                 if alerts:
-                    console.print("\n[yellow]告警:[/yellow]")
+                    console.print("\n[yellow]Alerts:[/yellow]")
                     for alert in alerts[:5]:
                         level = alert.get("level", "warning")
                         color = "red" if level == "critical" else "yellow"
                         console.print(f"  [{color}]• {alert.get('message', '')}[/{color}]")
 
-            # 总汇总
+            # Total summary
             summary = results.get("summary", {})
-            console.print(f"\n[bold]总汇总:[/bold] "
-                         f"服务器: {summary.get('total_servers', 0)}, "
-                         f"任务总数: {summary.get('total_tasks', 0)}, "
-                         f"[green]启用: {summary.get('total_enabled', 0)}[/green], "
-                         f"[red]禁用: {summary.get('total_disabled', 0)}[/red], "
-                         f"备份任务: {summary.get('total_backup_tasks', 0)}")
+            console.print(f"\n[bold]Total Summary:[/bold] "
+                         f"Servers: {summary.get('total_servers', 0)}, "
+                         f"Total tasks: {summary.get('total_tasks', 0)}, "
+                         f"[green]Enabled: {summary.get('total_enabled', 0)}[/green], "
+                         f"[red]Disabled: {summary.get('total_disabled', 0)}[/red], "
+                         f"Backup tasks: {summary.get('total_backup_tasks', 0)}")
 
         else:
-            # 单server模式
+            # Single server mode
             server_name = results.get("server", "Unknown")
             summary = results.get("summary", {})
 
-            console.print(Panel(f"[bold]{server_name} - 计划任务[/bold]", title="服务器"))
+            console.print(Panel(f"[bold]{server_name} - Scheduled Tasks[/bold]", title="Server"))
 
             tasks = results.get("tasks", [])
             if tasks:
                 table = Table(show_header=True, header_style="bold")
                 table.add_column("ID", width=6)
-                table.add_column("名称", style="cyan")
-                table.add_column("类型")
-                table.add_column("状态")
-                table.add_column("执行时间")
-                table.add_column("备份目标")
-                table.add_column("保留数")
+                table.add_column("Name", style="cyan")
+                table.add_column("Type")
+                table.add_column("Status")
+                table.add_column("Execution Time")
+                table.add_column("Backup Target")
+                table.add_column("Retention")
 
                 for task in tasks:
                     # status
                     if task["enabled"]:
-                        status_str = "[green]启用[/green]"
+                        status_str = "[green]Enabled[/green]"
                     else:
-                        status_str = "[red]禁用[/red]"
+                        status_str = "[red]Disabled[/red]"
 
-                    # 保留数
+                    # Retention count
                     save_count = task.get("save_count")
                     save_str = str(save_count) if save_count is not None else "-"
 
@@ -480,115 +482,115 @@ def print_crontab_table(results: dict, backup_only: bool = False):
 
                 console.print(table)
             else:
-                console.print("[yellow]无计划任务[/yellow]")
+                console.print("[yellow]No scheduled tasks[/yellow]")
 
-            # 汇总
-            console.print(f"\n[bold]汇总:[/bold]")
-            console.print(f"  总数: {summary.get('total', 0)}")
-            console.print(f"  [green]启用: {summary.get('enabled', 0)}[/green]")
-            console.print(f"  [red]禁用: {summary.get('disabled', 0)}[/red]")
-            console.print(f"  备份任务: {summary.get('backup_tasks', 0)}")
-            console.print(f"  Shell任务: {summary.get('shell_tasks', 0)}")
-            console.print(f"  其他任务: {summary.get('other_tasks', 0)}")
+            # Summary
+            console.print(f"\n[bold]Summary:[/bold]")
+            console.print(f"  Total: {summary.get('total', 0)}")
+            console.print(f"  [green]Enabled: {summary.get('enabled', 0)}[/green]")
+            console.print(f"  [red]Disabled: {summary.get('disabled', 0)}[/red]")
+            console.print(f"  Backup tasks: {summary.get('backup_tasks', 0)}")
+            console.print(f"  Shell tasks: {summary.get('shell_tasks', 0)}")
+            console.print(f"  Other tasks: {summary.get('other_tasks', 0)}")
 
-            # 告警
+            # Alerts
             alerts = results.get("alerts", [])
             if alerts:
-                console.print(f"\n[bold yellow]告警 ({len(alerts)}条):[/bold yellow]")
+                console.print(f"\n[bold yellow]Alerts ({len(alerts)}):[/bold yellow]")
                 for alert in alerts:
                     level = alert.get("level", "warning")
                     color = "red" if level == "critical" else "yellow"
                     console.print(f"  [{color}]• {alert.get('message', '')}[/{color}]")
 
     except ImportError:
-        print("请安装rich库以使用表格输出: pip install rich")
+        print("Please install rich library for table output: pip install rich")
         print(json.dumps(results, ensure_ascii=False, indent=2))
 
 
 def main():
-    """主函数"""
+    """Main function"""
     parser = argparse.ArgumentParser(
-        description="宝塔面板计划任务检查",
+        description="aaPanel Scheduled Task Check",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-示例:
-  # 查看所有计划任务
+Examples:
+  # View all scheduled tasks
   %(prog)s
 
-  # 只查看backup tasks
+  # View only backup tasks
   %(prog)s --backup-only
 
-  # 查看指定server
+  # View specific server
   %(prog)s --server prod-01
 
-  # 查看backup tasks日志
+  # View backup task logs
   %(prog)s --logs --task-id 11
 
-  # JSON格式输出
+  # JSON format output
   %(prog)s --format json
         """,
     )
-    parser.add_argument("--server", "-s", help="指定服务器名称")
-    parser.add_argument("--backup-only", action="store_true", help="只显示备份任务")
-    parser.add_argument("--logs", action="store_true", help="查看任务日志")
-    parser.add_argument("--task-id", type=int, help="任务ID（配合--logs使用）")
-    parser.add_argument("--days", type=int, default=7, help="日志查询天数（默认7天）")
-    parser.add_argument("--format", "-f", choices=["json", "table"], default="table", help="输出格式")
-    parser.add_argument("--output", "-o", help="输出文件路径")
-    parser.add_argument("--config", "-c", help="配置文件路径")
+    parser.add_argument("--server", "-s", help="Specify server name")
+    parser.add_argument("--backup-only", action="store_true", help="Show only backup tasks")
+    parser.add_argument("--logs", action="store_true", help="View task logs")
+    parser.add_argument("--task-id", type=int, help="Task ID (use with --logs)")
+    parser.add_argument("--days", type=int, default=7, help="Log query days (default 7)")
+    parser.add_argument("--format", "-f", choices=["json", "table"], default="table", help="Output format")
+    parser.add_argument("--output", "-o", help="Output file path")
+    parser.add_argument("--config", "-c", help="Config file path")
 
     args = parser.parse_args()
 
-    # 初始化client manager
+    # Initialize client manager
     manager = BtClientManager()
 
     try:
         manager.load_config(args.config)
     except FileNotFoundError as e:
-        print(f"错误: {e}", file=sys.stderr)
-        print("请先配置服务器: bt-config.py add", file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
+        print("Please configure server first: bt-config.py add", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"加载配置失败: {e}", file=sys.stderr)
+        print(f"Failed to load config: {e}", file=sys.stderr)
         sys.exit(1)
 
     if not manager.get_all_clients():
-        print("错误: 没有配置任何服务器", file=sys.stderr)
+        print("Error: No servers configured", file=sys.stderr)
         sys.exit(1)
 
     try:
         if args.logs and args.task_id:
-            # 查看任务日志
+            # View task logs
             if args.server:
                 client = manager.get_client(args.server)
             else:
-                # 获取第一个server
+                # Get first server
                 client = list(manager.get_all_clients().values())[0]
 
             results = get_backup_task_logs(client, args.task_id, args.days)
         else:
-            # 查看任务列表
+            # View task list
             results = run_crontab_check(manager, args.server, args.backup_only)
 
     except KeyError as e:
-        print(f"错误: 未找到服务器 {e}", file=sys.stderr)
+        print(f"Error: Server not found {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"检查失败: {e}", file=sys.stderr)
+        print(f"Check failed: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # 输出result
+    # Output result
     if args.format == "json":
         output = json.dumps(results, ensure_ascii=False, indent=2)
         if args.output:
             with open(args.output, "w", encoding="utf-8") as f:
                 f.write(output)
-            print(f"结果已保存到: {args.output}")
+            print(f"Result saved to: {args.output}")
         else:
             print(output)
     else:
         if args.logs:
-            # 日志输出
+            # Log output
             print(json.dumps(results, ensure_ascii=False, indent=2))
         else:
             print_crontab_table(results, args.backup_only)

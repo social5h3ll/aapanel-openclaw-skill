@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-宝塔面板文件下载脚本
+aaPanel File Download Script
 
-功能：
-- 从 URL 下载文件到服务器指定目录
-- 支持等待下载完成
-- 显示下载进度
+Features:
+- Download files from URL to specified server directory
+- Support waiting for download completion
+- Display download progress
 
-API 参考：
-- /files?action=DownloadFile - 发起下载
-- /task?action=get_task_lists - 查询任务进度
+API Reference:
+- /files?action=DownloadFile - Initiate download
+- /task?action=get_task_lists - Query task progress
 """
 
 import sys
@@ -18,7 +18,7 @@ import json
 import argparse
 from pathlib import Path
 
-# 添加父directory到 sys.path 以支持导入 bt_common
+# Add parent directory to sys.path to support importing bt_common
 _script_dir = Path(__file__).parent
 _skill_root = _script_dir.parent
 if (_skill_root / "bt_common").exists():
@@ -31,7 +31,7 @@ from bt_common.config import get_servers
 
 
 def get_client(server_name: str = None) -> BtClient:
-    """获取宝塔面板客户端"""
+    """Get aaPanel client"""
     if server_name:
         servers = get_servers()
         for server in servers:
@@ -51,14 +51,14 @@ def get_client(server_name: str = None) -> BtClient:
                     timeout=config['timeout'],
                     verify_ssl=config['verify_ssl']
                 )
-        raise ValueError(f"未找到服务器：{server_name}")
+        raise ValueError(f"Server not found: {server_name}")
     else:
         manager = BtClientManager()
         return manager.get_client()
 
 
 def format_size(size_bytes: int) -> str:
-    """格式化filesize"""
+    """Format file size"""
     if size_bytes < 1024:
         return f"{size_bytes}B"
     elif size_bytes < 1024 * 1024:
@@ -70,81 +70,81 @@ def format_size(size_bytes: int) -> str:
 
 
 def format_time(seconds: int) -> str:
-    """格式化time"""
+    """Format time"""
     if seconds < 60:
-        return f"{seconds}秒"
+        return f"{seconds}s"
     elif seconds < 3600:
-        return f"{seconds // 60}分{seconds % 60}秒"
+        return f"{seconds // 60}m {seconds % 60}s"
     else:
-        return f"{seconds // 3600}小时{(seconds % 3600) // 60}分"
+        return f"{seconds // 3600}h {(seconds % 3600) // 60}m"
 
 
 def cmd_download(args):
-    """下载file"""
+    """Download file"""
     client = get_client(args.server)
     
-    # 自动提取file名（如果未指定）
+    # Auto-extract file name (if not specified)
     filename = args.filename
     if not filename:
-        # usage urllib 解析 URL
+        # Use urllib to parse URL
         from urllib.parse import urlparse
         parsed = urlparse(args.url)
-        # 从 path 中提取file名
+        # Extract file name from path
         path_parts = parsed.path.rstrip('/').split('/')
         filename = path_parts[-1] if path_parts and path_parts[-1] else 'downloaded_file'
     
-    # 1. 发起下载request
-    print(f"\n📥 开始下载文件...")
+    # 1. Initiate download request
+    print(f"\n📥 Starting download...")
     print(f"   URL: {args.url}")
-    print(f"   目标路径: {args.path}")
-    print(f"   文件名: {filename}")
+    print(f"   Target path: {args.path}")
+    print(f"   File name: {filename}")
     print()
     
     endpoint = "/files?action=DownloadFile"
-    # 注意：filename 是必传parameter，否则 API return 500
+    # Note: filename is a required parameter, otherwise API returns 500
     params = {
         "url": args.url,
         "path": args.path,
-        "filename": filename,  # 必传！
+        "filename": filename,  # Required!
     }
     
     try:
         result = client.request(endpoint, params)
         if result.get('status'):
-            print(f"✅ 下载任务已添加到队列")
+            print(f"✅ Download task added to queue")
         else:
-            print(f"❌ 添加下载任务失败：{result.get('msg', '未知错误')}")
+            print(f"❌ Failed to add download task: {result.get('msg', 'Unknown error')}")
             return 1
     except Exception as e:
-        print(f"❌ 请求失败：{e}")
+        print(f"❌ Request failed: {e}")
         return 1
     
-    # 2. 如果不requires等待，直接return
+    # 2. If no wait required, return directly
     if not args.wait:
-        print("\n💡 使用 --wait 参数可以等待下载完成")
+        print("\n💡 Use --wait parameter to wait for download completion")
         return 0
     
-    # 3. 等待下载完成
-    print("\n⏳ 等待下载完成...")
+    # 3. Wait for download to complete
+    print("\n⏳ Waiting for download to complete...")
     print("-" * 60)
     
     task_id = None
     last_progress = -1
     start_time = time.time()
-    timeout = args.timeout or 600  # default 10 分钟超时
+    timeout = args.timeout or 600  # default 10 minutes timeout
     
     while True:
         elapsed = time.time() - start_time
         if elapsed > timeout:
-            print(f"\n❌ 下载超时（{timeout}秒）")
+            print(f"\n❌ Download timed out ({timeout}s)")
             return 1
         
-        # 查询任务列表
+        # Query task list
         try:
             task_result = client.request("/task?action=get_task_lists", {"status": "-3"})
             tasks = task_result if isinstance(task_result, list) else []
             
-            # 找到下载任务
+            # Find download task
             download_task = None
             for task in tasks:
                 if task.get('type') == '1' and args.url in task.get('shell', ''):
@@ -153,11 +153,11 @@ def cmd_download(args):
                     break
             
             if not download_task:
-                # 任务可能已完成，检查file是否存在
+                # Task may have completed, check if file exists
                 time.sleep(1)
                 continue
             
-            # 显示进度
+            # Display progress
             log = download_task.get('log', {})
             if isinstance(log, str):
                 try:
@@ -165,7 +165,7 @@ def cmd_download(args):
                 except:
                     log = {}
             
-            # 安全获取数value，处理字符串type
+            # Safely get values, handle string types
             def safe_int(val, default=0):
                 try:
                     return int(float(val)) if val else default
@@ -185,47 +185,47 @@ def cmd_download(args):
             remaining = safe_int(log.get('time', 0), 0)
             status = download_task.get('status')
             
-            # 构建进度条
+            # Build progress bar
             bar_length = 40
             filled = int(bar_length * progress / 100)
             bar = '█' * filled + '░' * (bar_length - filled)
             
-            # 只在进度变化时更新显示
+            # Only update display when progress changes
             if progress != last_progress:
                 last_progress = progress
                 print(f"\r   [{bar}] {progress:.1f}% | "
                       f"{format_size(used)}/{format_size(total) if total else '???'} | "
                       f"{format_size(speed)}/s | "
-                      f"剩余: {format_time(remaining)} | "
-                      f"状态: {'下载中' if status == -1 else '等待中' if status == 0 else '已完成'}", 
+                      f"Remaining: {format_time(remaining)} | "
+                      f"Status: {'Downloading' if status == -1 else 'Waiting' if status == 0 else 'Completed'}", 
                       end='', flush=True)
             
-            # 检查是否完成
+            # Check if completed
             if status == 1 or progress >= 100:
-                print()  # 换行
+                print()  # Newline
                 print("-" * 60)
-                print(f"✅ 下载完成！")
-                print(f"   文件: {args.path}/{filename}")
-                print(f"   大小: {format_size(total) if total else '未知'}")
-                print(f"   耗时: {format_time(int(elapsed))}")
+                print(f"✅ Download completed!")
+                print(f"   File: {args.path}/{filename}")
+                print(f"   Size: {format_size(total) if total else 'Unknown'}")
+                print(f"   Time: {format_time(int(elapsed))}")
                 return 0
             
-            # 检查是否failed
+            # Check if failed
             if status == -2:
-                print()  # 换行
+                print()  # Newline
                 print("-" * 60)
-                print(f"❌ 下载失败")
+                print(f"❌ Download failed")
                 return 1
             
-            time.sleep(1)  # 每秒刷新一次
+            time.sleep(1)  # Refresh every second
             
         except Exception as e:
-            print(f"\n❌ 查询进度失败：{e}")
+            print(f"\n❌ Failed to query progress: {e}")
             time.sleep(2)
 
 
 def cmd_tasks(args):
-    """查看任务列表"""
+    """View task list"""
     client = get_client(args.server)
     
     endpoint = "/task?action=get_task_lists"
@@ -236,32 +236,32 @@ def cmd_tasks(args):
         tasks = result if isinstance(result, list) else []
         
         if not tasks:
-            print("📭 暂无任务")
+            print("📭 No tasks")
             return 0
         
-        print(f"\n📋 任务列表 (共 {len(tasks)} 个)")
+        print(f"\n📋 Task list ({len(tasks)} total)")
         print("-" * 80)
-        print(f"{'ID':<6} {'类型':<10} {'名称':<20} {'状态':<10} {'进度':<10}")
+        print(f"{'ID':<6} {'Type':<10} {'Name':<20} {'Status':<10} {'Progress':<10}")
         print("-" * 80)
         
         status_map = {
-            -2: "❌ 失败",
-            -1: "⏳ 执行中",
-            0: "⏸️ 等待中",
-            1: "✅ 已完成"
+            -2: "❌ Failed",
+            -1: "⏳ Running",
+            0: "⏸️ Waiting",
+            1: "✅ Completed"
         }
         
         type_map = {
-            "1": "下载文件",
-            "2": "解压文件",
-            "3": "压缩文件"
+            "1": "Download",
+            "2": "Extract",
+            "3": "Compress"
         }
         
         for task in tasks:
             task_id = task.get('id', 'N/A')
-            task_type = type_map.get(str(task.get('type', '')), '未知')
+            task_type = type_map.get(str(task.get('type', '')), 'Unknown')
             task_name = task.get('name', 'N/A')[:18]
-            task_status = status_map.get(task.get('status'), '未知')
+            task_status = status_map.get(task.get('status'), 'Unknown')
             
             log = task.get('log', {})
             if isinstance(log, str):
@@ -274,12 +274,12 @@ def cmd_tasks(args):
         return 0
         
     except Exception as e:
-        print(f"❌ 查询失败：{e}")
+        print(f"❌ Query failed: {e}")
         return 1
 
 
 def cmd_cancel(args):
-    """取消任务"""
+    """Cancel task"""
     client = get_client(args.server)
     
     endpoint = "/task?action=remove_task"
@@ -288,59 +288,59 @@ def cmd_cancel(args):
     try:
         result = client.request(endpoint, params)
         if result.get('status'):
-            print(f"✅ 任务 {args.task_id} 已取消")
+            print(f"✅ Task {args.task_id} cancelled")
             return 0
         else:
-            print(f"❌ 取消失败：{result.get('msg', '未知错误')}")
+            print(f"❌ Cancellation failed: {result.get('msg', 'Unknown error')}")
             return 1
     except Exception as e:
-        print(f"❌ 请求失败：{e}")
+        print(f"❌ Request failed: {e}")
         return 1
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="宝塔面板文件下载工具",
+        description="aaPanel File Download Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-示例:
-  # 下载 WordPress 到指定directory（等待完成）
-  python3 download.py -s "内网 172" download \\
+Examples:
+  # Download WordPress to specified directory (wait for completion)
+  python3 download.py -s "Internal 172" download \\
       --url "https://cn.wordpress.org/latest-zh_CN.zip" \\
       --path "/www/test" \\
       --filename "wordpress.zip" \\
       --wait
 
-  # 查看current任务列表
-  python3 download.py -s "内网 172" tasks
+  # View current task list
+  python3 download.py -s "Internal 172" tasks
 
-  # 取消任务
-  python3 download.py -s "内网 172" cancel --task-id 1
+  # Cancel task
+  python3 download.py -s "Internal 172" cancel --task-id 1
         """
     )
     
-    # 全局parameter
-    parser.add_argument('-s', '--server', help='服务器名称')
+    # Global parameters
+    parser.add_argument('-s', '--server', help='Server name')
     
-    subparsers = parser.add_subparsers(dest='command', help='子命令')
+    subparsers = parser.add_subparsers(dest='command', help='Subcommands')
     
-    # download 命令
-    download_parser = subparsers.add_parser('download', help='下载文件')
-    download_parser.add_argument('--url', required=True, help='下载 URL')
-    download_parser.add_argument('--path', required=True, help='目标路径')
-    download_parser.add_argument('--filename', help='保存文件名（可选，默认从 URL 提取）')
-    download_parser.add_argument('--wait', action='store_true', help='等待下载完成')
-    download_parser.add_argument('--timeout', type=int, default=600, help='超时时间（秒，默认 600）')
+    # download command
+    download_parser = subparsers.add_parser('download', help='Download file')
+    download_parser.add_argument('--url', required=True, help='Download URL')
+    download_parser.add_argument('--path', required=True, help='Target path')
+    download_parser.add_argument('--filename', help='Save file name (optional, extracted from URL by default)')
+    download_parser.add_argument('--wait', action='store_true', help='Wait for download completion')
+    download_parser.add_argument('--timeout', type=int, default=600, help='Timeout (seconds, default 600)')
     download_parser.set_defaults(func=cmd_download)
     
-    # tasks 命令
-    tasks_parser = subparsers.add_parser('tasks', help='查看任务列表')
-    tasks_parser.add_argument('--status', default='-3', help='任务状态（-3=全部，-1=执行中，0=等待中，1=已完成）')
+    # tasks command
+    tasks_parser = subparsers.add_parser('tasks', help='View task list')
+    tasks_parser.add_argument('--status', default='-3', help='Task status (-3=all, -1=running, 0=waiting, 1=completed)')
     tasks_parser.set_defaults(func=cmd_tasks)
     
-    # cancel 命令
-    cancel_parser = subparsers.add_parser('cancel', help='取消任务')
-    cancel_parser.add_argument('--task-id', required=True, type=int, help='任务 ID')
+    # cancel command
+    cancel_parser = subparsers.add_parser('cancel', help='Cancel task')
+    cancel_parser.add_argument('--task-id', required=True, type=int, help='Task ID')
     cancel_parser.set_defaults(func=cmd_cancel)
     
     args = parser.parse_args()

@@ -1,6 +1,6 @@
 """
-bt-common 公共模块
-提供宝塔API客户端、配置管理和工具函数
+bt-common - Public Module
+Provides aaPanel API client, configuration management, and utility functions
 """
 
 from .api_endpoints import (
@@ -70,7 +70,7 @@ from .files_client import (
 )
 
 __all__ = [
-    # API端点
+    # API endpoints
     "API_ENDPOINTS",
     "API_GROUPS",
     "API_DESCRIPTIONS",
@@ -84,11 +84,11 @@ __all__ = [
     "get_endpoints_by_group",
     "list_endpoints",
     "get_endpoint_description",
-    # 客户端
+    # Client
     "BtClient",
     "BtClientManager",
     "sign_request",
-    # 配置
+    # Config
     "Config",
     "ServerConfig",
     "ThresholdConfig",
@@ -108,7 +108,7 @@ __all__ = [
     "get_config_info",
     "normalize_host",
     "validate_host",
-    # 工具
+    # Utilities
     "Alert",
     "format_bytes",
     "format_uptime",
@@ -126,7 +126,7 @@ __all__ = [
     "print_table",
     "output_result",
     "generate_summary_report",
-    # file操作
+    # File operations
     "FilesClient",
     "FilesClientManager",
     "get_server_config",

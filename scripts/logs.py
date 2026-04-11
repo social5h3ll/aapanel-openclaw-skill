@@ -7,13 +7,13 @@
 # ]
 # ///
 """
-日志读取脚本
-读取服务器上的各种日志文件（Nginx/Apache/Redis/MySQL/PostgreSQL错误日志等）
+Log Reading Script
+Reads various log files on the server (Nginx/Apache/Redis/MySQL/PostgreSQL error logs, etc.)
 
-注意事项：
-- 只有已安装的服务才能获取日志
-- MySQL 使用特殊接口获取日志，不是文件路径
-- PostgreSQL 需要安装 pgsql_manager 插件
+Notes:
+- Only installed services can have logs retrieved
+- MySQL uses a special interface to get logs, not file paths
+- PostgreSQL requires pgsql_manager plugin
 """
 
 import argparse
@@ -40,20 +40,20 @@ from bt_common import (
 )
 
 
-# Supported service logs（filepath + 特殊接口）
+# Supported service logs (file path + special interfaces)
 SUPPORTED_LOG_SERVICES = list(SERVICE_LOG_PATHS.keys()) + list(SPECIAL_SERVICE_APIS.keys())
 
 
 def check_service_installed(client: BtClient, service: str) -> tuple[bool, str]:
     """
-    检查服务是否已安装
+    Check if service is installed
 
     Args:
-        client: 宝塔客户端
-        service: 服务名称
+        client: aaPanel client
+        service: Service name
 
     Returns:
-        (是否已安装, 状态信息)
+        (is_installed, status_info)
     """
     try:
         status = client.get_service_status(service)
@@ -61,29 +61,29 @@ def check_service_installed(client: BtClient, service: str) -> tuple[bool, str]:
         running = status.get("status", False)
 
         if not installed:
-            return False, "服务未安装"
+            return False, "Service not installed"
         elif not running:
-            return True, "服务已安装但未运行"
+            return True, "Service installed but not running"
         else:
-            return True, "服务运行中"
+            return True, "Service running"
     except Exception as e:
-        return False, f"检查状态失败: {str(e)}"
+        return False, f"Failed to check status: {str(e)}"
 
 
 def get_service_log(client: BtClient, service: str, log_type: str = "error",
                     lines: int = 100, check_installed: bool = True) -> dict:
     """
-    获取服务日志
+    Get service log
 
     Args:
-        client: 宝塔客户端
-        service: 服务名称
-        log_type: 日志类型 (error/slow)
-        lines: 返回的最后N行
-        check_installed: 是否检查服务安装状态
+        client: aaPanel client
+        service: Service name
+        log_type: Log type (error/slow)
+        lines: Return last N lines
+        check_installed: Whether to check service installation status
 
     Returns:
-        日志内容
+        Log content
     """
     result = {
         "server": client.name,
@@ -99,66 +99,66 @@ def get_service_log(client: BtClient, service: str, log_type: str = "error",
     }
 
     try:
-        # 检查服务是否支持
+        # Check if service is supported
         if service not in SUPPORTED_LOG_SERVICES:
-            result["error"] = f"不支持的服务: {service}。支持的服务: {', '.join(SUPPORTED_LOG_SERVICES)}"
+            result["error"] = f"Unsupported service: {service}. Supported: {', '.join(SUPPORTED_LOG_SERVICES)}"
             result["installed"] = False
             return result
 
-        # 检查服务安装status
+        # Check service installation status
         if check_installed:
             installed, status_msg = check_service_installed(client, service)
             result["installed"] = installed
 
             if not installed:
-                result["error"] = f"无法获取日志: {status_msg}"
+                result["error"] = f"Cannot get log: {status_msg}"
                 return result
 
-        # 特殊服务处理（pgsql、mysql）
+        # Special service handling (pgsql, mysql)
         if service in SPECIAL_SERVICE_APIS:
             api_key = "log" if log_type == "error" else "slow_log"
             endpoint = SPECIAL_SERVICE_APIS[service].get(api_key)
             if not endpoint:
-                result["error"] = f"不支持的日志类型: {log_type}"
+                result["error"] = f"Unsupported log type: {log_type}"
                 return result
 
             response = client.request(endpoint)
             if response.get("status"):
-                # 日志可能是列表格式或字符串
+                # Log may be list format or string
                 log_data = response.get("data", [])
                 if isinstance(log_data, list):
                     result["content"] = "\n".join(str(line) for line in log_data)
                 elif isinstance(log_data, str):
-                    # MySQL 日志可能直接是字符串
+                    # MySQL log may be directly a string
                     result["content"] = log_data
                 else:
                     result["content"] = str(log_data)
             else:
-                result["error"] = response.get("msg", "获取日志失败")
+                result["error"] = response.get("msg", "Failed to get log")
             return result
 
-        # 标准服务日志path（nginx、apache、redis）
+        # Standard service log paths (nginx, apache, redis)
         if service not in SERVICE_LOG_PATHS:
-            result["error"] = f"不支持的服务: {service}"
+            result["error"] = f"Unsupported service: {service}"
             return result
 
         log_path = SERVICE_LOG_PATHS[service]
         result["path"] = log_path
 
-        # 读取filecontent
+        # Read file content
         response = client.get_file_body(log_path)
         if response.get("status"):
             content = response.get("data", "")
             result["size"] = response.get("size", 0)
 
-            # 只return最后N行
+            # Only return last N lines
             if content:
                 content_lines = content.split("\n")
                 if len(content_lines) > lines:
                     content_lines = content_lines[-lines:]
                 result["content"] = "\n".join(content_lines)
         else:
-            result["error"] = response.get("msg", "读取日志文件失败")
+            result["error"] = response.get("msg", "Failed to read log file")
 
     except Exception as e:
         result["error"] = str(e)
@@ -170,24 +170,24 @@ def run_log_check(manager: BtClientManager, server: Optional[str] = None,
                   log_type: str = "error", service: Optional[str] = None,
                   lines: int = 100) -> dict:
     """
-    执行日志检查
+    Execute log check
 
     Args:
-        manager: 客户端管理器
-        server: 指定服务器名称
-        log_type: 日志类型
-        service: 服务名称
-        lines: 返回的行数
+        manager: Client manager
+        server: Specify server name
+        log_type: Log type
+        service: Service name
+        lines: Number of lines to return
 
     Returns:
-        检查结果
+        Check results
     """
-    # 单个server
+    # Single server
     if server:
         client = manager.get_client(server)
         return get_service_log(client, service, log_type, lines)
 
-    # 所有server
+    # All servers
     all_clients = manager.get_all_clients()
     results = {
         "timestamp": datetime.now().isoformat(),
@@ -208,7 +208,7 @@ def run_log_check(manager: BtClientManager, server: Optional[str] = None,
 
 
 def print_log_output(results: dict, format_type: str = "table"):
-    """打印日志输出"""
+    """Print log output"""
     try:
         from rich.console import Console
         from rich.panel import Panel
@@ -217,15 +217,15 @@ def print_log_output(results: dict, format_type: str = "table"):
         console = Console()
 
         if "servers" in results:
-            # 多server模式
+            # Multi-server mode
             for server_data in results["servers"]:
                 if "error" in server_data and "content" not in server_data:
                     server_name = server_data.get("server", "Unknown")
                     installed = server_data.get("installed", True)
                     if not installed:
-                        console.print(f"[yellow]服务器 {server_name}: {server_data['error']}[/yellow]")
+                        console.print(f"[yellow]Server {server_name}: {server_data['error']}[/yellow]")
                     else:
-                        console.print(f"[red]服务器 {server_name} 错误: {server_data['error']}[/red]")
+                        console.print(f"[red]Server {server_name} error: {server_data['error']}[/red]")
                     continue
 
                 server_name = server_data.get("server", "Unknown")
@@ -235,24 +235,24 @@ def print_log_output(results: dict, format_type: str = "table"):
                 console.print(f"\n[bold cyan]═══ {server_name} - {service} ═══[/bold cyan]")
 
                 if isinstance(content, str):
-                    # 日志content
+                    # Log content
                     if content.strip():
-                        # 尝试语法高亮
+                        # Try syntax highlighting
                         try:
                             syntax = Syntax(content, "log", theme="monokai", line_numbers=True)
                             console.print(syntax)
                         except Exception:
                             console.print(content)
                     else:
-                        console.print("[yellow]日志为空[/yellow]")
+                        console.print("[yellow]Log is empty[/yellow]")
                 else:
                     console.print(str(content))
 
                 if server_data.get("size"):
-                    console.print(f"\n[dim]文件大小: {server_data['size']} 字节[/dim]")
+                    console.print(f"\n[dim]File size: {server_data['size']} bytes[/dim]")
 
         else:
-            # 单server模式
+            # Single server mode
             server_name = results.get("server", "Unknown")
             service = results.get("service", "unknown")
             content = results.get("content", "")
@@ -261,12 +261,12 @@ def print_log_output(results: dict, format_type: str = "table"):
 
             if error:
                 if not installed:
-                    console.print(f"[yellow]跳过: {error}[/yellow]")
+                    console.print(f"[yellow]Skipped: {error}[/yellow]")
                 else:
-                    console.print(f"[red]错误: {error}[/red]")
+                    console.print(f"[red]Error: {error}[/red]")
                 return
 
-            console.print(Panel(f"[bold]{server_name} - {service}[/bold]", title="日志"))
+            console.print(Panel(f"[bold]{server_name} - {service}[/bold]", title="Log"))
 
             if isinstance(content, str):
                 if content.strip():
@@ -276,15 +276,15 @@ def print_log_output(results: dict, format_type: str = "table"):
                     except Exception:
                         console.print(content)
                 else:
-                    console.print("[yellow]日志为空[/yellow]")
+                    console.print("[yellow]Log is empty[/yellow]")
             else:
                 console.print(str(content))
 
             if results.get("size"):
-                console.print(f"\n[dim]文件大小: {results['size']} 字节[/dim]")
+                console.print(f"\n[dim]File size: {results['size']} bytes[/dim]")
 
     except ImportError:
-        # 无rich库时usage简单输出
+        # Without rich library, use simple output
         if "servers" in results:
             for server_data in results["servers"]:
                 print(f"\n=== {server_data.get('server', 'Unknown')} ===")
@@ -296,81 +296,81 @@ def print_log_output(results: dict, format_type: str = "table"):
 
 
 def main():
-    """主函数"""
+    """Main function"""
     parser = argparse.ArgumentParser(
-        description="宝塔面板服务日志读取",
+        description="aaPanel Service Log Reading",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-示例:
-  # 查看Nginxerror日志
+Examples:
+  # View Nginx error log
   %(prog)s --service nginx
 
-  # 查看Redis日志
+  # View Redis log
   %(prog)s --service redis
 
-  # 查看Apacheerror日志
+  # View Apache error log
   %(prog)s --service apache
 
-  # 查看MySQLerror日志
+  # View MySQL error log
   %(prog)s --service mysql
 
-  # 查看MySQL慢查询日志
+  # View MySQL slow query log
   %(prog)s --service mysql --log-type slow
 
-  # 查看PostgreSQL日志（requires插件）
+  # View PostgreSQL log (requires plugin)
   %(prog)s --service pgsql
 
-  # 查看PostgreSQL慢日志
+  # View PostgreSQL slow log
   %(prog)s --service pgsql --log-type slow
 
-  # 指定server和行数
+  # Specify server and line count
   %(prog)s --server prod-01 --service nginx --lines 200
 
-  # JSON格式输出
+  # JSON format output
   %(prog)s --service nginx --format json
 
-支持的服务: nginx, apache, redis, mysql, pgsql
+Supported services: nginx, apache, redis, mysql, pgsql
 
-注意事项:
-  - 只有已安装的服务才能获取日志
-  - MySQL 使用API接口获取日志，非文件路径
-  - PostgreSQL 需要安装 pgsql_manager 插件
+Notes:
+  - Only installed services can have logs retrieved
+  - MySQL uses API interface to get logs, not file paths
+  - PostgreSQL requires pgsql_manager plugin
         """,
     )
-    parser.add_argument("--server", "-s", help="指定服务器名称")
+    parser.add_argument("--server", "-s", help="Specify server name")
     parser.add_argument("--service", required=True,
-                        help="服务名称 (nginx/apache/redis/mysql/pgsql)")
+                        help="Service name (nginx/apache/redis/mysql/pgsql)")
     parser.add_argument("--log-type", choices=["error", "slow"], default="error",
-                        help="日志类型: error(错误日志), slow(慢日志，mysql/pgsql支持)")
+                        help="Log type: error (error log), slow (slow log, supported by mysql/pgsql)")
     parser.add_argument("--lines", "-n", type=int, default=100,
-                        help="返回最后N行日志 (默认: 100)")
+                        help="Return last N lines of log (default: 100)")
     parser.add_argument("--format", "-f", choices=["json", "table"], default="table",
-                        help="输出格式")
-    parser.add_argument("--output", "-o", help="输出文件路径")
-    parser.add_argument("--config", "-c", help="配置文件路径")
+                        help="Output format")
+    parser.add_argument("--output", "-o", help="Output file path")
+    parser.add_argument("--config", "-c", help="Config file path")
     parser.add_argument("--no-check", action="store_true",
-                        help="跳过服务安装状态检查")
+                        help="Skip service installation status check")
 
     args = parser.parse_args()
 
-    # 初始化client manager
+    # Initialize client manager
     manager = BtClientManager()
 
     try:
         manager.load_config(args.config)
     except FileNotFoundError as e:
-        print(f"错误: {e}", file=sys.stderr)
-        print("请先配置服务器: bt-config.py add", file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
+        print("Please configure server first: bt-config.py add", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"加载配置失败: {e}", file=sys.stderr)
+        print(f"Failed to load config: {e}", file=sys.stderr)
         sys.exit(1)
 
     if not manager.get_all_clients():
-        print("错误: 没有配置任何服务器", file=sys.stderr)
+        print("Error: No servers configured", file=sys.stderr)
         sys.exit(1)
 
-    # 执行日志读取
+    # Execute log reading
     try:
         results = run_log_check(
             manager,
@@ -380,19 +380,19 @@ def main():
             lines=args.lines,
         )
     except KeyError as e:
-        print(f"错误: 未找到服务器 {e}", file=sys.stderr)
+        print(f"Error: Server not found {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"读取日志失败: {e}", file=sys.stderr)
+        print(f"Failed to read log: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # 输出result
+    # Output result
     if args.format == "json":
         output = json.dumps(results, ensure_ascii=False, indent=2)
         if args.output:
             with open(args.output, "w", encoding="utf-8") as f:
                 f.write(output)
-            print(f"结果已保存到: {args.output}")
+            print(f"Result saved to: {args.output}")
         else:
             print(output)
     else:

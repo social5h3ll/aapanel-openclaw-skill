@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # coding: utf-8
 """
-宝塔文件操作客户端
-封装宝塔面板文件管理 API 接口
+aaPanel File Operations Client
+Encapsulates aaPanel file management API interfaces
 """
 
 import json
@@ -10,7 +10,7 @@ import urllib.parse
 import warnings
 from typing import Optional, Dict, Any, List
 
-# 禁用 SSL warning
+# Disable SSL warning
 warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 
 from .bt_client import BtClient, BtClientManager
@@ -19,13 +19,13 @@ from .config import get_servers, ServerConfig
 
 def get_server_config(server_name: str = None) -> Optional[Dict]:
     """
-    获取服务器配置
+    Get server configuration
 
     Args:
-        server_name: 服务器名称，为 None 时返回第一个启用的服务器
+        server_name: Server name, returns first enabled server when None
 
     Returns:
-        服务器配置字典或 None
+        Server config dict or None
     """
     servers = get_servers()
     if not servers:
@@ -33,10 +33,10 @@ def get_server_config(server_name: str = None) -> Optional[Dict]:
 
     if server_name:
         for server in servers:
-            # 兼容 ServerConfig 对象和字典两种格式
+            # Support both ServerConfig objects and dict formats
             name = server.name if hasattr(server, 'name') and hasattr(server, 'host') else server.get('name')
             if name == server_name:
-                # 如果是 ServerConfig 对象，转换为字典return
+                # Convert ServerConfig object to dict
                 if hasattr(server, 'name') and hasattr(server, 'host'):
                     return {
                         'name': server.name,
@@ -49,12 +49,12 @@ def get_server_config(server_name: str = None) -> Optional[Dict]:
                 return server
         return None
 
-    # return第一个启用的server
+    # Return first enabled server
     for server in servers:
-        # 兼容 ServerConfig 对象和字典两种格式
+        # Support both ServerConfig objects and dict formats
         enabled = server.enabled if hasattr(server, 'enabled') and hasattr(server, 'host') else server.get('enabled', True)
         if enabled:
-            # 如果是 ServerConfig 对象，转换为字典return
+            # Convert ServerConfig object to dict
             if hasattr(server, 'name') and hasattr(server, 'host'):
                 return {
                     'name': server.name,
@@ -70,25 +70,25 @@ def get_server_config(server_name: str = None) -> Optional[Dict]:
 
 
 class FilesClient:
-    """宝塔file操作客户端"""
+    """aaPanel file operations client"""
 
     def __init__(self, server_name: str = None):
         """
-        初始化文件客户端
+        Initialize file client
 
         Args:
-            server_name: 服务器名称，为 None 时使用默认服务器
+            server_name: Server name, uses default server when None
         """
         self.server_name = server_name
         self.client = None
         self._init_client()
 
     def _init_client(self):
-        """初始化 API 客户端"""
+        """Initialize API client"""
         if self.server_name:
             config = get_server_config(self.server_name)
             if not config:
-                raise ValueError(f"未找到服务器配置：{self.server_name}")
+                raise ValueError(f"Server configuration not found: {self.server_name}")
             self.client = BtClient(
                 name=config.get('name', self.server_name),
                 host=config['host'],
@@ -97,25 +97,25 @@ class FilesClient:
                 verify_ssl=config.get('verify_ssl', True)
             )
         else:
-            # usagedefaultserver
+            # Use default server
             manager = BtClientManager()
             self.client = manager.get_client()
 
     def _encode_path(self, path: str) -> str:
-        """URL encodingpath"""
+        """URL encode path"""
         return urllib.parse.quote(path, safe='')
 
     def get_dir(self, path: str = "/www", page: int = 1, show_row: int = 500) -> Dict[str, Any]:
         """
-        获取目录信息
+        Get directory info
 
         Args:
-            path: 目录路径
-            page: 页码
-            show_row: 每页显示数量
+            path: Directory path
+            page: Page number
+            show_row: Items per page
 
         Returns:
-            目录信息字典，包含 dir（目录列表）和 files（文件列表）
+            Directory info dict, containing dir (directory list) and files (file list)
         """
         encoded_path = self._encode_path(path)
         endpoint = f"/files?action=GetDirNew&path={encoded_path}&p={page}&showRow={show_row}"
@@ -123,13 +123,13 @@ class FilesClient:
 
     def get_file_body(self, path: str) -> Dict[str, Any]:
         """
-        读取文件内容
+        Read file content
 
         Args:
-            path: 文件路径
+            path: File path
 
         Returns:
-            文件内容字典，包含 data、encoding、size 等字段
+            File content dict, containing data, encoding, size, etc.
         """
         encoded_path = self._encode_path(path)
         endpoint = f"/files?action=GetFileBody&path={encoded_path}"
@@ -138,21 +138,21 @@ class FilesClient:
     def save_file_body(self, path: str, data: str, encoding: str = "utf-8",
                        st_mtime: str = None, force: bool = False) -> Dict[str, Any]:
         """
-        保存文件内容
+        Save file content
 
         Args:
-            path: 文件路径
-            data: 文件内容
-            encoding: 文件编码
-            st_mtime: 文件修改时间戳（用于并发检测）
-            force: 是否强制保存
+            path: File path
+            data: File content
+            encoding: File encoding
+            st_mtime: File modification timestamp (for concurrency detection)
+            force: Whether to force save
 
         Returns:
-            保存结果字典
+            Save result dict
         """
         encoded_path = self._encode_path(path)
 
-        # usage POST body 发送数据，避免 URL 过长问题
+        # Use POST body to send data, avoid URL length issues
         params = {
             "path": path,
             "data": data,
@@ -168,13 +168,13 @@ class FilesClient:
 
     def create_dir(self, path: str) -> Dict[str, Any]:
         """
-        创建目录
+        Create directory
 
         Args:
-            path: 目录路径
+            path: Directory path
 
         Returns:
-            创建结果字典
+            Create result dict
         """
         encoded_path = self._encode_path(path)
         endpoint = f"/files?action=CreateDir&path={encoded_path}"
@@ -182,13 +182,13 @@ class FilesClient:
 
     def create_file(self, path: str) -> Dict[str, Any]:
         """
-        创建文件
+        Create file
 
         Args:
-            path: 文件路径
+            path: File path
 
         Returns:
-            创建结果字典
+            Create result dict
         """
         encoded_path = self._encode_path(path)
         endpoint = f"/files?action=CreateFile&path={encoded_path}"
@@ -196,13 +196,13 @@ class FilesClient:
 
     def delete_dir(self, path: str) -> Dict[str, Any]:
         """
-        删除目录（移动到回收站）
+        Delete directory (move to recycle bin)
 
         Args:
-            path: 目录路径
+            path: Directory path
 
         Returns:
-            删除结果字典
+            Delete result dict
         """
         encoded_path = self._encode_path(path)
         endpoint = f"/files?action=DeleteDir&path={encoded_path}"
@@ -210,13 +210,13 @@ class FilesClient:
 
     def delete_file(self, path: str) -> Dict[str, Any]:
         """
-        删除文件（移动到回收站）
+        Delete file (move to recycle bin)
 
         Args:
-            path: 文件路径
+            path: File path
 
         Returns:
-            删除结果字典
+            Delete result dict
         """
         encoded_path = self._encode_path(path)
         endpoint = f"/files?action=DeleteFile&path={encoded_path}"
@@ -224,13 +224,13 @@ class FilesClient:
 
     def get_file_access(self, filename: str) -> Dict[str, Any]:
         """
-        获取文件权限
+        Get file permissions
 
         Args:
-            filename: 文件路径
+            filename: File path
 
         Returns:
-            权限信息字典，包含 chmod 和 chown
+            Permission info dict, containing chmod and chown
         """
         encoded_filename = self._encode_path(filename)
         endpoint = f"/files?action=GetFileAccess&filename={encoded_filename}"
@@ -239,20 +239,20 @@ class FilesClient:
     def set_file_access(self, filename: str, access: str, user: str = "www",
                         group: str = "www", all_files: bool = False) -> Dict[str, Any]:
         """
-        设置文件权限
+        Set file permissions
 
         Args:
-            filename: 文件路径
-            access: 权限码（如 755, 644）
-            user: 所有者用户名（默认 www）
-            group: 用户组名（默认 www）
-            all_files: 是否递归设置子目录和文件
+            filename: File path
+            access: Permission code (e.g. 755, 644)
+            user: Owner username (default www)
+            group: Group name (default www)
+            all_files: Whether to recursively set subdirectories and files
 
         Returns:
-            设置结果字典
+            Set result dict
         """
-        # 宝塔 SetFileAccess API requires filename, access, user, group parameter
-        # 注意：user 和 group 必须同时提供，否则会failed
+        # aaPanel SetFileAccess API requires filename, access, user, group parameters
+        # Note: user and group must be provided together, otherwise will fail
         params = {
             "filename": filename,
             "access": access,
@@ -265,36 +265,36 @@ class FilesClient:
         endpoint = f"/files?action=SetFileAccess"
         return self.client.request(endpoint, params)
 
-    # ==================== 便捷方法 ====================
+    # ==================== Convenience Methods ====================
 
     def read_file(self, path: str) -> str:
         """
-        便捷方法：直接读取文件内容返回字符串
+        Convenience method: Read file content directly as string
 
         Args:
-            path: 文件路径
+            path: File path
 
         Returns:
-            文件内容字符串
+            File content string
         """
         result = self.get_file_body(path)
         if result.get('status') or result.get('only_read') is False:
             return result.get('data', '')
-        raise Exception(result.get('msg', '读取文件失败'))
+        raise Exception(result.get('msg', 'Failed to read file'))
 
     def write_file(self, path: str, content: str, encoding: str = "utf-8") -> bool:
         """
-        便捷方法：写入文件内容
+        Convenience method: Write file content
 
         Args:
-            path: 文件路径
-            content: 文件内容
-            encoding: 文件编码
+            path: File path
+            content: File content
+            encoding: File encoding
 
         Returns:
-            是否成功
+            Whether successful
         """
-        # 先获取currentfileinfo以获取 st_mtime
+        # Get current file info to get st_mtime
         try:
             file_info = self.get_file_body(path)
             st_mtime = file_info.get('st_mtime')
@@ -306,13 +306,13 @@ class FilesClient:
 
     def list_dir(self, path: str = "/www") -> Dict[str, List]:
         """
-        便捷方法：获取目录列表
+        Convenience method: Get directory list
 
         Args:
-            path: 目录路径
+            path: Directory path
 
         Returns:
-            包含 directories 和 files 的字典
+            Dict containing directories and files
         """
         result = self.get_dir(path)
         return {
@@ -323,20 +323,20 @@ class FilesClient:
 
 
 class FilesClientManager:
-    """fileclient manager - 支持多server"""
+    """File client manager - multi-server support"""
 
     def __init__(self):
         self._clients: Dict[str, FilesClient] = {}
 
     def get_client(self, server_name: str = None) -> FilesClient:
         """
-        获取文件客户端
+        Get file client
 
         Args:
-            server_name: 服务器名称
+            server_name: Server name
 
         Returns:
-            FilesClient 实例
+            FilesClient instance
         """
         if server_name is None:
             server_name = "_default"
@@ -347,6 +347,6 @@ class FilesClientManager:
         return self._clients[server_name]
 
     def list_servers(self) -> List[str]:
-        """列出所有可用的server"""
+        """List all available servers"""
         config = get_servers()
         return [s.get('name') for s in config] if config else []

@@ -7,8 +7,8 @@
 # ]
 # ///
 """
-系统资源监控脚本
-监控CPU、内存、磁盘和网络使用情况
+System Resource Monitor Script
+Monitors CPU, memory, disk, and network usage
 """
 
 import argparse
@@ -23,7 +23,7 @@ from typing import Optional
 # dev environment: src/bt_common/ (scripts in src/btpanel/scripts/)
 _skill_root = Path(__file__).parent.parent  # skill package root directory
 
-# 优先尝试release environment（skill package root directory），然后尝试dev environment
+# Prioritize release environment (skill package root), then dev environment
 if (_skill_root / "bt_common").exists():
     sys.path.insert(0, str(_skill_root))
 else:
@@ -40,22 +40,22 @@ from bt_common import (
 
 def get_server_system_status(client: BtClient, thresholds: dict) -> dict:
     """
-    获取单个服务器的系统状态
+    Get single server's system status
 
     Args:
-        client: 宝塔客户端
-        thresholds: 告警阈值配置
+        client: aaPanel client
+        thresholds: Alert threshold config
 
     Returns:
-        系统状态信息
+        System status info
     """
-    # 获取系统status（GetNetWork接口return完整监控数据）
+    # Get system status (GetNetWork API returns complete monitor data)
     status_data = client.get_system_status()
 
-    # parse data
+    # Parse data
     formatted = parse_system_monitor_data(status_data, client.name)
 
-    # 检查告警
+    # Check alerts
     alerts = check_thresholds(formatted, thresholds)
 
     result = formatted
@@ -65,25 +65,25 @@ def get_server_system_status(client: BtClient, thresholds: dict) -> dict:
 
 def run_monitor(manager: BtClientManager, server: Optional[str] = None) -> dict:
     """
-    执行系统监控
+    Execute system monitor
 
     Args:
-        manager: 客户端管理器
-        server: 指定服务器名称
+        manager: Client manager
+        server: Specify server name
 
     Returns:
-        监控结果
+        Monitor results
     """
     from datetime import datetime
 
     thresholds = manager.get_global_config().get("thresholds", {"cpu": 80, "memory": 85, "disk": 90})
 
-    # 单个server
+    # Single server
     if server:
         client = manager.get_client(server)
         return get_server_system_status(client, thresholds)
 
-    # 所有server
+    # All servers
     all_clients = manager.get_all_clients()
     results = {
         "timestamp": datetime.now().isoformat(),
@@ -96,7 +96,7 @@ def run_monitor(manager: BtClientManager, server: Optional[str] = None) -> dict:
             status = get_server_system_status(client, thresholds)
             results["servers"].append(status)
 
-            # statistics健康status
+            # Statistics health status
             alerts = status.get("alerts", [])
             if not alerts:
                 results["summary"]["healthy"] += 1
@@ -121,7 +121,7 @@ def run_monitor(manager: BtClientManager, server: Optional[str] = None) -> dict:
 
 
 def print_table_output(results: dict):
-    """打印表格格式输出"""
+    """Print table-formatted output"""
     try:
         from rich.console import Console
         from rich.table import Table
@@ -129,14 +129,14 @@ def print_table_output(results: dict):
         console = Console()
 
         if "servers" in results:
-            # 多server模式
-            table = Table(title="系统资源监控")
-            table.add_column("服务器", style="cyan")
-            table.add_column("系统", style="white")
+            # Multi-server mode
+            table = Table(title="System Resource Monitor")
+            table.add_column("Server", style="cyan")
+            table.add_column("System", style="white")
             table.add_column("CPU", style="green")
-            table.add_column("内存", style="yellow")
-            table.add_column("磁盘", style="red")
-            table.add_column("状态", style="bold")
+            table.add_column("Memory", style="yellow")
+            table.add_column("Disk", style="red")
+            table.add_column("Status", style="bold")
 
             for server in results["servers"]:
                 if "error" in server:
@@ -146,7 +146,7 @@ def print_table_output(results: dict):
                         "-",
                         "-",
                         "-",
-                        "[red]连接失败[/red]",
+                        "[red]Connection failed[/red]",
                     )
                     continue
 
@@ -154,14 +154,14 @@ def print_table_output(results: dict):
                 memory = server.get("memory", {})
                 disk = server.get("disk", {})
 
-                # 确定status颜色
+                # Determine status color
                 alerts = server.get("alerts", [])
                 if not alerts:
-                    status = "[green]正常[/green]"
+                    status = "[green]Normal[/green]"
                 elif any(a.get("level") == "critical" for a in alerts):
-                    status = "[red]异常[/red]"
+                    status = "[red]Error[/red]"
                 else:
-                    status = "[yellow]警告[/yellow]"
+                    status = "[yellow]Warning[/yellow]"
 
                 table.add_row(
                     server.get("server", "Unknown"),
@@ -174,19 +174,19 @@ def print_table_output(results: dict):
 
             console.print(table)
 
-            # 打印汇总
+            # Print summary
             summary = results.get("summary", {})
             console.print(
-                f"\n汇总: [green]正常{summary.get('healthy', 0)}[/green], "
-                f"[yellow]警告{summary.get('warning', 0)}[/yellow], "
-                f"[red]异常{summary.get('critical', 0)}[/red]"
+                f"\nSummary: [green]Normal {summary.get('healthy', 0)}[/green], "
+                f"[yellow]Warning {summary.get('warning', 0)}[/yellow], "
+                f"[red]Error {summary.get('critical', 0)}[/red]"
             )
         else:
-            # 单server模式
+            # Single server mode
             server_name = results.get("server", "Unknown")
-            table = Table(title=f"服务器: {server_name}")
-            table.add_column("指标", style="cyan")
-            table.add_column("值", style="green")
+            table = Table(title=f"Server: {server_name}")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Value", style="green")
 
             cpu = results.get("cpu", {})
             memory = results.get("memory", {})
@@ -194,50 +194,50 @@ def print_table_output(results: dict):
             load = results.get("load", {})
             network = results.get("network", {})
 
-            table.add_row("系统", results.get("system", "Unknown"))
-            table.add_row("主机名", results.get("hostname", "Unknown"))
-            table.add_row("运行时间", results.get("uptime", "Unknown"))
-            table.add_row("面板版本", results.get("version", "Unknown"))
+            table.add_row("System", results.get("system", "Unknown"))
+            table.add_row("Hostname", results.get("hostname", "Unknown"))
+            table.add_row("Uptime", results.get("uptime", "Unknown"))
+            table.add_row("Panel Version", results.get("version", "Unknown"))
             table.add_row("", "")
             table.add_row("[bold]CPU[/bold]", "")
-            table.add_row("  使用率", f"{cpu.get('usage', 0):.1f}%")
-            table.add_row("  核心数", str(cpu.get("cores", 1)))
-            table.add_row("  型号", str(cpu.get("model", "Unknown")))
+            table.add_row("  Usage", f"{cpu.get('usage', 0):.1f}%")
+            table.add_row("  Cores", str(cpu.get("cores", 1)))
+            table.add_row("  Model", str(cpu.get("model", "Unknown")))
             table.add_row("", "")
-            table.add_row("[bold]内存[/bold]", "")
-            table.add_row("  使用量", f"{memory.get('used_mb', 0)}/{memory.get('total_mb', 0)} MB")
-            table.add_row("  使用率", f"{memory.get('percent', 0):.1f}%")
-            table.add_row("  可用", f"{memory.get('available_mb', 0)} MB")
+            table.add_row("[bold]Memory[/bold]", "")
+            table.add_row("  Used", f"{memory.get('used_mb', 0)}/{memory.get('total_mb', 0)} MB")
+            table.add_row("  Usage", f"{memory.get('percent', 0):.1f}%")
+            table.add_row("  Available", f"{memory.get('available_mb', 0)} MB")
             table.add_row("", "")
-            table.add_row("[bold]磁盘[/bold]", "")
-            table.add_row("  使用量", f"{disk.get('used_human', '0')}/{disk.get('total_human', '0')}")
-            table.add_row("  使用率", f"{disk.get('percent', 0):.1f}%")
+            table.add_row("[bold]Disk[/bold]", "")
+            table.add_row("  Used", f"{disk.get('used_human', '0')}/{disk.get('total_human', '0')}")
+            table.add_row("  Usage", f"{disk.get('percent', 0):.1f}%")
             table.add_row("", "")
-            table.add_row("[bold]负载[/bold]", "")
-            table.add_row("  1分钟", f"{load.get('one_minute', 0):.2f}")
-            table.add_row("  5分钟", f"{load.get('five_minute', 0):.2f}")
-            table.add_row("  15分钟", f"{load.get('fifteen_minute', 0):.2f}")
+            table.add_row("[bold]Load[/bold]", "")
+            table.add_row("  1 minute", f"{load.get('one_minute', 0):.2f}")
+            table.add_row("  5 minutes", f"{load.get('five_minute', 0):.2f}")
+            table.add_row("  15 minutes", f"{load.get('fifteen_minute', 0):.2f}")
             table.add_row("", "")
-            table.add_row("[bold]网络[/bold]", "")
-            table.add_row("  上行", f"{network.get('current_up', 0):.2f} KB/s")
-            table.add_row("  下行", f"{network.get('current_down', 0):.2f} KB/s")
-            table.add_row("  总上行", network.get("total_up", "0"))
-            table.add_row("  总下行", network.get("total_down", "0"))
+            table.add_row("[bold]Network[/bold]", "")
+            table.add_row("  Upload", f"{network.get('current_up', 0):.2f} KB/s")
+            table.add_row("  Download", f"{network.get('current_down', 0):.2f} KB/s")
+            table.add_row("  Total Upload", network.get("total_up", "0"))
+            table.add_row("  Total Download", network.get("total_down", "0"))
             table.add_row("", "")
-            table.add_row("[bold]资源[/bold]", "")
-            table.add_row("  网站", str(results.get("resources", {}).get("sites", 0)))
-            table.add_row("  数据库", str(results.get("resources", {}).get("databases", 0)))
+            table.add_row("[bold]Resources[/bold]", "")
+            table.add_row("  Sites", str(results.get("resources", {}).get("sites", 0)))
+            table.add_row("  Databases", str(results.get("resources", {}).get("databases", 0)))
 
             console.print(table)
 
-            # 打印磁盘分区
+            # Print disk partitions
             disks = disk.get("disks", [])
             if disks:
-                disk_table = Table(title="磁盘分区")
-                disk_table.add_column("挂载点", style="cyan")
-                disk_table.add_column("文件系统", style="white")
-                disk_table.add_column("使用量", style="green")
-                disk_table.add_column("使用率", style="yellow")
+                disk_table = Table(title="Disk Partitions")
+                disk_table.add_column("Mount Point", style="cyan")
+                disk_table.add_column("File System", style="white")
+                disk_table.add_column("Used", style="green")
+                disk_table.add_column("Usage", style="yellow")
 
                 for d in disks:
                     disk_table.add_row(
@@ -248,76 +248,76 @@ def print_table_output(results: dict):
                     )
                 console.print(disk_table)
 
-            # 打印告警
+            # Print alerts
             alerts = results.get("alerts", [])
             if alerts:
-                console.print("\n[bold yellow]告警:[/bold yellow]")
+                console.print("\n[bold yellow]Alerts:[/bold yellow]")
                 for alert in alerts:
                     level = alert.get("level", "warning")
                     color = "red" if level == "critical" else "yellow"
                     console.print(f"  [{color}]{alert.get('message', '')}[/{color}]")
 
     except ImportError:
-        # 如果没有rich库，usage简单输出
-        print("请安装rich库以使用表格输出: pip install rich")
+        # Without rich library, use simple output
+        print("Please install rich library for table output: pip install rich")
         print(json.dumps(results, ensure_ascii=False, indent=2))
 
 
 def main():
-    """主函数"""
+    """Main function"""
     parser = argparse.ArgumentParser(
-        description="宝塔面板系统资源监控",
+        description="aaPanel System Resource Monitor",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-示例:
-  # 监控所有server
+Examples:
+  # Monitor all servers
   %(prog)s
 
-  # 监控指定server
+  # Monitor specific server
   %(prog)s --server prod-01
 
-  # JSON格式输出
+  # JSON format output
   %(prog)s --format json
 
-  # 输出到file
+  # Output to file
   %(prog)s --output report.json
         """,
     )
-    parser.add_argument("--server", "-s", help="指定服务器名称")
-    parser.add_argument("--format", "-f", choices=["json", "table"], default="json", help="输出格式")
-    parser.add_argument("--output", "-o", help="输出文件路径")
-    parser.add_argument("--config", "-c", help="配置文件路径")
+    parser.add_argument("--server", "-s", help="Specify server name")
+    parser.add_argument("--format", "-f", choices=["json", "table"], default="json", help="Output format")
+    parser.add_argument("--output", "-o", help="Output file path")
+    parser.add_argument("--config", "-c", help="Config file path")
 
     args = parser.parse_args()
 
-    # 初始化client manager
+    # Initialize client manager
     manager = BtClientManager()
 
     try:
         manager.load_config(args.config)
     except FileNotFoundError as e:
-        print(f"错误: {e}", file=sys.stderr)
-        print("请设置 BT_CONFIG_PATH 环境变量或创建配置文件", file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
+        print("Please set BT_CONFIG_PATH environment variable or create config file", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"加载配置失败: {e}", file=sys.stderr)
+        print(f"Failed to load config: {e}", file=sys.stderr)
         sys.exit(1)
 
     if not manager.get_all_clients():
-        print("错误: 没有配置任何服务器", file=sys.stderr)
+        print("Error: No servers configured", file=sys.stderr)
         sys.exit(1)
 
-    # 执行监控
+    # Execute monitor
     try:
         results = run_monitor(manager, args.server)
     except KeyError as e:
-        print(f"错误: 未找到服务器 {e}", file=sys.stderr)
+        print(f"Error: Server not found {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"监控失败: {e}", file=sys.stderr)
+        print(f"Monitor failed: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # 输出result
+    # Output result
     if args.format == "table":
         print_table_output(results)
     else:
@@ -325,7 +325,7 @@ def main():
         if args.output:
             with open(args.output, "w", encoding="utf-8") as f:
                 f.write(output)
-            print(f"结果已保存到: {args.output}")
+            print(f"Result saved to: {args.output}")
         else:
             print(output)
 
