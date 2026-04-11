@@ -2,16 +2,43 @@
 
 ![aaPanel OpenClaw Skill](icon/bt.png)
 
-**Version:** 0.2.0-beta  
-**Author:** [5H3LL / social5h3ll](https://github.com/social5h3ll)  
+[![clawhub](https://img.shields.io/badge/ClawHub-aapanel--5h3ll-ff6b35?style=flat-square)](https://clawhub.ai/skills/aapanel-5h3ll)
+[![GitHub](https://img.shields.io/badge/GitHub-social5h3ll/aapanel--openclaw--skill-24292f?style=flat-square)](https://github.com/social5h3ll/aapanel-openclaw-skill)
+[![Version](https://img.shields.io/badge/Version-0.2.0-3b82f6?style=flat-square)](#)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square)](#)
+[![aaPanel](https://img.shields.io/badge/aaPanel-≥9.0.0-e34f26?style=flat-square)](#)
+
+![X](icon/x-logo.png [@social5h3ll](https://x.com/social5h3ll))
+
+**Version:** 0.2.0  
+**Author:** [5H3LL / social5h3ll](https://github.com/social5h3ll) · [:bird: @social5h3ll](https://x.com/social5h3ll)  
 **License:** MIT  
-**Repository:** https://github.com/social5h3ll/aapanel-openclaw-skill
+**Repository:** [github.com/social5h3ll/aapanel-openclaw-skill](https://github.com/social5h3ll/aapanel-openclaw-skill)  
+**ClawHub:** [clawhub.ai/skills/aapanel-5h3ll](https://clawhub.ai/skills/aapanel-5h3ll)
 
 ---
 
 A fully-featured [OpenClaw](https://github.com/openclaw/openclaw) skill for managing and monitoring **aaPanel/BT-Panel** servers. Connect one or more aaPanel instances and manage sites, SSL certificates, databases, firewall rules, FTP accounts, PHP versions, and more — directly from OpenClaw.
 
 Built for homelab enthusiasts, sysadmins, and developers who run aaPanel as their server management panel.
+
+---
+
+## Install
+
+```bash
+# One command — ClawHub handles everything
+clawhub install aapanel-5h3ll
+
+# Update to latest version
+clawhub update aapanel-5h3ll
+```
+
+**Requirements:** Python 3.10+, `requests`, `pyyaml`, `rich`
+
+```bash
+pip install requests pyyaml rich
+```
 
 ---
 
@@ -66,18 +93,6 @@ Built for homelab enthusiasts, sysadmins, and developers who run aaPanel as thei
 - Add, list, and remove multiple aaPanel servers via config tool
 - Per-server health checks with configurable alert thresholds
 - Global threshold configuration in `~/.openclaw/bt-skills.yaml`
-
----
-
-## Requirements
-
-- **aaPanel / BT-Panel:** >= 9.0.0
-- **Python:** >= 3.10
-- **Dependencies:** `requests`, `pyyaml`, `rich`
-
-```bash
-pip install requests pyyaml rich
-```
 
 ---
 
@@ -326,7 +341,7 @@ Issues, feature requests, and pull requests are welcome. If you find bugs or wan
 
 ## Changelog
 
-### v0.2.0-beta (2026-04-10)
+### v0.2.0 (2026-04-10)
 - **New:** SSL certificate management — list, provision Let's Encrypt, renew, revoke
 - **New:** Site management — create/delete sites, domain binding
 - **New:** Database management — create/delete databases, user management, privilege grants
