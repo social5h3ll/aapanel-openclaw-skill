@@ -1,5 +1,5 @@
 ---
-name: btpanel
+name: aaPanel-Server-Skill
 description: aaPanel/BT-Panel server monitoring and file management skill — system resources, site status, service status, SSH logs, cron jobs, log reading, and remote file operations
 user-invocable: true
 disable-model-invocation: false
