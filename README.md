@@ -4,13 +4,13 @@
 
 [![clawhub](https://img.shields.io/badge/ClawHub-aapanel--5h3ll-ff6b35?style=flat-square)](https://clawhub.ai/skills/aapanel-5h3ll)
 [![GitHub](https://img.shields.io/badge/GitHub-social5h3ll/aapanel--openclaw--skill-24292f?style=flat-square)](https://github.com/social5h3ll/aapanel-openclaw-skill)
-[![Version](https://img.shields.io/badge/Version-1.0.5-3b82f6?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-1.0.6-3b82f6?style=flat-square)](#)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square)](#)
 [![aaPanel](https://img.shields.io/badge/aaPanel-≥9.0.0-e34f26?style=flat-square)](#)
 
 ![X](icon/x-logo.png [@social5h3ll](https://x.com/social5h3ll))
 
-**Version:** 1.0.5  
+**Version:** 1.0.6  
 **Author:** [5H3LL / social5h3ll](https://github.com/social5h3ll) · [:bird: @social5h3ll](https://x.com/social5h3ll)  
 **License:** MIT  
 **Repository:** [github.com/social5h3ll/aapanel-openclaw-skill](https://github.com/social5h3ll/aapanel-openclaw-skill)  
@@ -126,10 +126,10 @@ python3 scripts/services.py --server my-server
 ### 3. Manage SSL Certificates
 
 ```bash
-python3 scripts/ssl.py --server my-server --list          # List all certs
-python3 scripts/ssl.py --server my-server --issue mysite.com  # Provision Let's Encrypt
-python3 scripts/ssl.py --server my-server --renew mysite.com  # Renew certificate
-python3 scripts/ssl.py --server my-server --revoke mysite.com # Revoke certificate
+python3 scripts/ssl_certs.py --server my-server --list          # List all certs
+python3 scripts/ssl_certs.py --server my-server --issue mysite.com  # Provision Let's Encrypt
+python3 scripts/ssl_certs.py --server my-server --renew mysite.com  # Renew certificate
+python3 scripts/ssl_certs.py --server my-server --revoke mysite.com # Revoke certificate
 ```
 
 ### 4. Create a Site
@@ -197,10 +197,10 @@ python3 scripts/php.py --server my-server --site mysite.com --version 82
 
 | Command | Description |
 |---------|-------------|
-| `python3 scripts/ssl.py --server s1 --list` | List all SSL certificates |
-| `python3 scripts/ssl.py --server s1 --issue mysite.com` | Provision Let's Encrypt cert |
-| `python3 scripts/ssl.py --server s1 --renew mysite.com` | Renew certificate |
-| `python3 scripts/ssl.py --server s1 --revoke mysite.com` | Revoke certificate |
+| `python3 scripts/ssl_certs.py --server s1 --list` | List all SSL certificates |
+| `python3 scripts/ssl_certs.py --server s1 --issue mysite.com` | Provision Let's Encrypt cert |
+| `python3 scripts/ssl_certs.py --server s1 --renew mysite.com` | Renew certificate |
+| `python3 scripts/ssl_certs.py --server s1 --revoke mysite.com` | Revoke certificate |
 
 ### Database Management
 
@@ -340,6 +340,11 @@ Issues, feature requests, and pull requests are welcome. If you find bugs or wan
 ---
 
 ## Changelog
+
+### v1.0.6 (2026-05-01)
+- **Fix:** Renamed `ssl.py` → `ssl_certs.py` to avoid conflicting with Python's standard library `ssl` module
+- **Fix:** Added missing `BtClient` imports to `databases.py`, `ftp.py`, `firewall.py`, `php.py`, `sites_mgmt.py`
+- **Improved:** All scripts now work correctly when deployed to remote servers without Python path issues
 
 ### v1.0.5 (2026-04-11)
 - **Translated:** All Chinese text in Python scripts fully translated to English

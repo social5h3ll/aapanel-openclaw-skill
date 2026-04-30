@@ -23,7 +23,7 @@ if (_skill_root / "bt_common").exists():
 else:
     sys.path.insert(0, str(_skill_root.parent / "src"))
 
-from bt_common import BtClientManager
+from bt_common import BtClientManager, BtClient
 
 
 def list_databases(client: BtClient) -> list:

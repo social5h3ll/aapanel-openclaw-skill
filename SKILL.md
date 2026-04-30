@@ -140,11 +140,11 @@ python3 scripts/bt-config.py threshold --cpu 80    # Set alert thresholds
 ### SSL Certificate Management
 
 ```bash
-python3 scripts/ssl.py list --server my-server           # List SSL certificates
-python3 scripts/ssl.py info --server my-server --site example.com  # Get site SSL info
-python3 scripts/ssl.py provision --server my-server --site example.com  # Let's Encrypt
-python3 scripts/ssl.py renew --server my-server --site example.com    # Renew certificate
-python3 scripts/ssl.py revoke --server my-server --site example.com   # Revoke/disable SSL
+python3 scripts/ssl_certs.py list --server my-server           # List SSL certificates
+python3 scripts/ssl_certs.py info --server my-server --site example.com  # Get site SSL info
+python3 scripts/ssl_certs.py provision --server my-server --site example.com  # Let's Encrypt
+python3 scripts/ssl_certs.py renew --server my-server --site example.com    # Renew certificate
+python3 scripts/ssl_certs.py revoke --server my-server --site example.com   # Revoke/disable SSL
 ```
 
 ### Site Management
