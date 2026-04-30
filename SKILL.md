@@ -41,7 +41,7 @@ Combined server monitoring and file operations toolkit for aaPanel/BT-Panel. Sup
 
 ![aaPanel](icon/bt-logo.svg)
 
-**Skill version:** 0.1.0-beta  
+**Skill version:** 1.0.7  
 **aaPanel dependency:** >= 9.0.0 | Python >= 3.10
 
 ---

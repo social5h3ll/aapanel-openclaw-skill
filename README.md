@@ -4,13 +4,13 @@
 
 [![clawhub](https://img.shields.io/badge/ClawHub-aapanel--5h3ll-ff6b35?style=flat-square)](https://clawhub.ai/skills/aapanel-5h3ll)
 [![GitHub](https://img.shields.io/badge/GitHub-social5h3ll/aapanel--openclaw--skill-24292f?style=flat-square)](https://github.com/social5h3ll/aapanel-openclaw-skill)
-[![Version](https://img.shields.io/badge/Version-1.0.6-3b82f6?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-1.0.7-3b82f6?style=flat-square)](#)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square)](#)
 [![aaPanel](https://img.shields.io/badge/aaPanel-≥9.0.0-e34f26?style=flat-square)](#)
 
 ![X](icon/x-logo.png [@social5h3ll](https://x.com/social5h3ll))
 
-**Version:** 1.0.6  
+**Version:** 1.0.7  
 **Author:** [5H3LL / social5h3ll](https://github.com/social5h3ll) · [:bird: @social5h3ll](https://x.com/social5h3ll)  
 **License:** MIT  
 **Repository:** [github.com/social5h3ll/aapanel-openclaw-skill](https://github.com/social5h3ll/aapanel-openclaw-skill)  
@@ -341,7 +341,7 @@ Issues, feature requests, and pull requests are welcome. If you find bugs or wan
 
 ## Changelog
 
-### v1.0.6 (2026-05-01)
+### v1.0.7 (2026-05-01)
 - **Fix:** Renamed `ssl.py` → `ssl_certs.py` to avoid conflicting with Python's standard library `ssl` module
 - **Fix:** Added missing `BtClient` imports to `databases.py`, `ftp.py`, `firewall.py`, `php.py`, `sites_mgmt.py`
 - **Improved:** All scripts now work correctly when deployed to remote servers without Python path issues
