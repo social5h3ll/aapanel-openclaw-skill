@@ -8,7 +8,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square)](#)
 [![aaPanel](https://img.shields.io/badge/aaPanel-≥9.0.0-e34f26?style=flat-square)](#)
 
-![X](icon/x-logo.png [@social5h3ll](https://x.com/social5h3ll))
+Let us know what you think! [@social5h3ll on X](https://x.com/social5h3ll)
 
 **Version:** 1.0.7  
 **Author:** [5H3LL / social5h3ll](https://github.com/social5h3ll) · [:bird: @social5h3ll](https://x.com/social5h3ll)  
